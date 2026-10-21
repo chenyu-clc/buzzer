@@ -104,4 +104,186 @@
 
         <div class="flex items-center gap-3">
           <button onclick="resetBuzzers()" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-base transition">
-            🔄 重置
+            🔄 重置本題
+          </button>
+          <button id="toggleBuzzBtn" onclick="toggleBuzzState()" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg shadow-emerald-500/30 transition transform active:scale-95">
+            📢 開放搶答！
+          </button>
+        </div>
+      </div>
+
+      <!-- 在線學生名單狀態列 -->
+      <div class="bg-white rounded-2xl p-4 border border-indigo-100 shadow-sm flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-black text-slate-700">👥 同空間學生：</span>
+          <span id="onlineCountBadge" class="bg-indigo-100 text-indigo-700 font-black px-2.5 py-0.5 rounded-full text-sm">0 人</span>
+        </div>
+        <div id="onlineListNames" class="text-xs text-slate-500 font-medium flex gap-1.5 flex-wrap">
+          等待學生加入中...
+        </div>
+      </div>
+
+      <!-- 戰況與排行榜 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 第一名特寫展示 -->
+        <div class="md:col-span-1 bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-amber-200 rounded-3xl p-6 text-center flex flex-col justify-center items-center shadow-md">
+          <span class="text-amber-600 font-black text-sm tracking-widest uppercase mb-1">👑 最先搶到者</span>
+          <div id="firstPlaceName" class="text-4xl md:text-5xl font-black text-slate-800 my-4">等待搶答...</div>
+          <div id="firstPlaceTime" class="text-xl font-bold text-amber-700">--</div>
+          <button id="rewardBtn" onclick="awardPoint()" class="mt-4 hidden px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black text-lg rounded-xl shadow-md transition">
+            🎉 加分獎勵！
+          </button>
+        </div>
+
+        <!-- 即時榜單 -->
+        <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-indigo-100 shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+              <span>⚡ 即時搶答榜單</span>
+              <span id="buzzCountBadge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-bold">0 人搶答</span>
+            </h3>
+            <span class="text-xs font-bold text-slate-400">毫秒高精度排序</span>
+          </div>
+          <div id="rankingList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div class="text-center py-12 text-slate-400 font-bold">按上方「開放搶答」讓學生開始按鈕！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 學生端畫面（按鈕 + 即時全班戰況榜） -->
+    <div id="studentView" class="hidden flex flex-col items-center justify-center space-y-6 text-center max-w-lg mx-auto w-full">
+      <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-indigo-100 shadow-sm w-full flex justify-between items-center">
+        <span class="text-slate-500 font-bold">房間：<span id="studentRoomBadge" class="text-indigo-600 font-black text-xl">----</span></span>
+        <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
+      </div>
+
+      <!-- 超大搶答按鈕 -->
+      <div class="relative py-2">
+        <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
+          class="buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
+          <div class="w-24 h-24 flex items-center justify-center pointer-events-none">
+            <img class="chenyu-logo w-full h-full object-contain filter drop-shadow" src="yu_logo.png" alt="原創標誌">
+          </div>
+          <span id="btnStatusText" class="text-2xl font-black">準備中</span>
+        </button>
+      </div>
+
+      <div id="studentFeedback" class="text-xl font-black text-slate-500 min-h-[2rem]">
+        等待老師開放題目...
+      </div>
+
+      <!-- 學生端專屬：全班即時搶答戰況榜單 -->
+      <div class="bg-white rounded-3xl p-5 border border-indigo-100 shadow-md w-full text-left">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="text-base font-black text-slate-700 flex items-center gap-1.5">
+            <span>📊 全班搶答戰況</span>
+            <span id="studentBuzzCountBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">0 人</span>
+          </h4>
+          <span id="myRankBadge" class="text-xs font-black text-indigo-600"></span>
+        </div>
+        <div id="studentRankingList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-sm">
+          <div class="text-center py-4 text-slate-400 font-bold text-xs">題目開放後，將即時顯示全班排名</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- QR Code 視窗 -->
+  <div id="qrModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
+      <h3 class="text-2xl font-black text-slate-800">學生掃碼立即加入</h3>
+      <p class="text-xs text-slate-500">免下載、免安裝，相機掃描即可搶答</p>
+      
+      <div id="qrcodeContainer" class="p-4 bg-white border-2 border-indigo-100 rounded-2xl flex items-center justify-center min-h-[200px]"></div>
+
+      <div class="text-3xl font-black text-indigo-600 tracking-widest bg-indigo-50 py-2 rounded-xl">
+        代碼：<span id="qrModalRoomCode">----</span>
+      </div>
+
+      <button onclick="closeQrModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+        關閉視窗
+      </button>
+    </div>
+  </div>
+
+  <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
+    <img class="chenyu-logo w-6 h-6 object-contain inline-block" src="yu_logo.png" alt="Chen Yu">
+    <span>網站由 CHEN YU 製作</span>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.chenyu-logo').forEach(img => {
+      img.onerror = () => {
+        img.src = "https://chenyu-clc.github.io/buzzer/yu_logo.png";
+      };
+    });
+
+    const SUPABASE_URL = "https://znwkuorhccknmljyrggt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpud2t1b3JoY2Nrbm1sanlyZ2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1OTEyODksImV4cCI6MjEwODE2NzI4OX0.y_5MlmlJZlBqhnE8JWVXjrKKRfxfPPhHZSZN1aI_VDQ";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let channel = null;
+    let currentRole = null;
+    let roomCode = '';
+    let userName = '';
+    let isOpen = false;
+    let openTimestamp = 0;
+    let hasPressed = false;
+    let rankedStudents = [];
+    let myStudentId = 'stu_' + Math.random().toString(36).substring(2, 9);
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 600, duration = 0.15, type = 'sine') {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function randomRoomCode() {
+      document.getElementById('roomCodeInput').value = Math.floor(1000 + Math.random() * 9000);
+    }
+
+    function joinRoom(role) {
+      const code = document.getElementById('roomCodeInput').value.trim();
+      const name = document.getElementById('userNameInput').value.trim();
+
+      if (!code || code.length < 3) {
+        alert('請輸入 3 或 4 位數字的房間代碼！');
+        return;
+      }
+
+      if (role === 'student' && !name) {
+        alert('請輸入您的暱稱或座號姓名！');
+        return;
+      }
+
+      currentRole = role;
+      roomCode = code;
+      userName = name || '老師';
+
+      document.getElementById('loginView').classList.add('hidden');
+
+      if (role === 'teacher') {
+        document.getElementById('teacherView').classList.remove('hidden');
+        document.getElementById('teacherRoomCode').textContent = roomCode;
+      } else {
+        document.getElementById('studentView').classList.remove('hidden');
+        document.getElementById('studentRoomBadge').textContent = roomCode;
+        document.getElementById('studentNameBadge').textContent = userName;
+      }
+
+      setupRealtimeSpace();
+    }
+
+    // 核心空間設定：結合 Presence (在線空間同在) 與 Broadcast (雙向廣播)
+    function setupRealtimeSpace() {
