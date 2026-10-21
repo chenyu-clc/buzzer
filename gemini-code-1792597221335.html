@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>課堂搶答系統</title>
+  <title>課堂搶答系統｜同步診斷版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- Supabase 官方客戶端庫 -->
+  <!-- 引入標準 443 埠即時通訊庫 (Supabase Realtime) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -41,7 +41,7 @@
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
-          <p class="text-xs text-indigo-600 font-bold tracking-wider">即時毫秒判定・公平競賽</p>
+          <p class="text-xs text-indigo-600 font-bold tracking-wider">老師統一判定・全班即時同步</p>
         </div>
       </div>
       <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-full border border-amber-200">
@@ -115,7 +115,7 @@
       <!-- 在線學生名單狀態列 -->
       <div class="bg-white rounded-2xl p-4 border border-indigo-100 shadow-sm flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-black text-slate-700">👥 同空間學生：</span>
+          <span class="text-sm font-black text-slate-700">👥 已進房學生：</span>
           <span id="onlineCountBadge" class="bg-indigo-100 text-indigo-700 font-black px-2.5 py-0.5 rounded-full text-sm">0 人</span>
         </div>
         <div id="onlineListNames" class="text-xs text-slate-500 font-medium flex gap-1.5 flex-wrap">
@@ -131,7 +131,7 @@
           <div id="firstPlaceName" class="text-4xl md:text-5xl font-black text-slate-800 my-4">等待搶答...</div>
           <div id="firstPlaceTime" class="text-xl font-bold text-amber-700">--</div>
           <button id="rewardBtn" onclick="awardPoint()" class="mt-4 hidden px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black text-lg rounded-xl shadow-md transition">
-            🎉 加分獎勵！
+            🎉 播放答對特效
           </button>
         </div>
 
@@ -142,7 +142,7 @@
               <span>⚡ 即時搶答榜單</span>
               <span id="buzzCountBadge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-bold">0 人搶答</span>
             </h3>
-            <span class="text-xs font-bold text-slate-400">毫秒高精度排序</span>
+            <span class="text-xs font-bold text-slate-400">依老師端收到搶答的先後排序（受網路延遲影響）</span>
           </div>
           <div id="rankingList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
             <div class="text-center py-12 text-slate-400 font-bold">按上方「開放搶答」讓學生開始按鈕！</div>
@@ -158,7 +158,7 @@
         <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
       </div>
 
-      <!-- 超大搶答按鈕 -->
+      <!-- 超大搶答按鈕（中央呈現原創圖檔） -->
       <div class="relative py-2">
         <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
           class="buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
@@ -189,6 +189,16 @@
     </div>
   </main>
 
+  <!-- 即時連線診斷區：在手機與電腦可各自查看狀態，協助釐清網路／金鑰／房間問題 -->
+  <section class="max-w-5xl mx-auto w-full px-4 pb-4" aria-label="連線診斷">
+    <details class="bg-white rounded-xl border border-slate-200 p-3 text-xs shadow-sm" open>
+      <summary class="cursor-pointer font-bold text-slate-700">🛠 連線診斷（排查老師／學生不同步）</summary>
+      <p class="my-2 text-slate-500">老師與學生都應顯示「已訂閱頻道」，且房間代碼完全一樣。這個區域不會顯示 API Key。</p>
+      <pre id="diagnosticText" class="bg-slate-100 rounded-lg p-3 whitespace-pre-wrap break-all text-slate-700">正在檢查設定…</pre>
+      <button onclick="copyDiagnostics()" class="mt-2 py-2 px-3 rounded-lg bg-indigo-100 text-indigo-800 font-bold">複製診斷內容</button>
+    </details>
+  </section>
+
   <!-- QR Code 視窗 -->
   <div id="qrModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
@@ -196,6 +206,7 @@
       <p class="text-xs text-slate-500">免下載、免安裝，相機掃描即可搶答</p>
       
       <div id="qrcodeContainer" class="p-4 bg-white border-2 border-indigo-100 rounded-2xl flex items-center justify-center min-h-[200px]"></div>
+      <p id="qrLinkText" class="text-xs text-slate-600 break-all"></p>
 
       <div class="text-3xl font-black text-indigo-600 tracking-widest bg-indigo-50 py-2 rounded-xl">
         代碼：<span id="qrModalRoomCode">----</span>
@@ -209,81 +220,334 @@
 
   <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
     <img class="chenyu-logo w-6 h-6 object-contain inline-block" src="yu_logo.png" alt="Chen Yu">
-    <span>網站由 CHEN YU 製作</span>
+    <span>網站由 CHEN YU 製作｜同步修正版</span>
   </footer>
 
   <script>
+    // 原本的介面與吉祥物保留。此版本採「老師端唯一排行榜」與重連狀態補發。
     document.querySelectorAll('.chenyu-logo').forEach(img => {
-      img.onerror = () => {
-        img.src = "https://chenyu-clc.github.io/buzzer/yu_logo.png";
-      };
+      img.onerror = () => { img.onerror = null; img.src = 'https://chenyu-clc.github.io/buzzer/yu_logo.png'; };
     });
 
-    const SUPABASE_URL = "https://znwkuorhccknmljyrggt.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpud2t1b3JoY2Nrbm1sanlyZ2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1OTEyODksImV4cCI6MjEwODE2NzI4OX0.y_5MlmlJZlBqhnE8JWVXjrKKRfxfPPhHZSZN1aI_VDQ";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 已填入目前 Supabase 專案的公開 publishable key。
+    // 千萬不要貼 service_role 或 secret key 到公開的 GitHub Pages。
+    const SUPABASE_URL = 'https://znwkuorhccknmljyrggt.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_FGTOh7OAHe2tC3jwSx2QNA_4AEsj8a9';
+    const CONFIGURED = Boolean(SUPABASE_URL && /^sb_publishable_[A-Za-z0-9_-]+$/.test(SUPABASE_ANON_KEY));
+    const supabaseClient = CONFIGURED && window.supabase
+      ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          realtime: { params: { eventsPerSecond: 10 } }
+        }) : null;
 
-    let channel = null;
-    let currentRole = null;
-    let roomCode = '';
-    let userName = '';
-    let isOpen = false;
-    let openTimestamp = 0;
-    let hasPressed = false;
-    let rankedStudents = [];
-    let myStudentId = 'stu_' + Math.random().toString(36).substring(2, 9);
+    let channel = null, currentRole = null, roomCode = '', userName = '';
+    const PUBLIC_SITE_URL = 'https://chenyu-clc.github.io/buzzer/';
+    let stateRequestTimer = null;
+    let lastTeacherStateAt = 0;
+    let isOpen = false, hasPressed = false, isConnected = false;
+    let roundId = 0, revision = 0, rankedStudents = [], onlineStudents = new Map();
+    let pendingBuzz = false;
+    let channelStatus = '尚未進房';
+    let lastNetworkError = '無';
+    let lastBroadcast = '尚未傳送';
+    let lastReceive = '尚未收到';
+    let teacherOnline = false;
+    let presenceTrackStatus = '尚未送出';
+    let diagnosticTimer = null;
+    function diagnosticText() {
+      const keyLooksValid = /^sb_publishable_[A-Za-z0-9_-]+$/.test(SUPABASE_ANON_KEY) ||
+        (SUPABASE_ANON_KEY.startsWith('eyJ') && SUPABASE_ANON_KEY.split('.').length === 3);
+      return [
+        '程式：完整同步修正版 3',
+        '網站來源：' + location.origin,
+        'Supabase 專案：' + (SUPABASE_URL.match(/^https:\/\/([^.]+)/)?.[1] || '網址不正確'),
+        '金鑰：' + (!CONFIGURED ? '尚未填入' : keyLooksValid ? '格式看似正確（未驗證是否有效）' : '格式異常'),
+        'SDK：' + (window.supabase ? '已載入' : '載入失敗'),
+        '身分：' + (currentRole === 'teacher' ? '老師' : currentRole === 'student' ? '學生' : '尚未進房'),
+        '房間：' + (roomCode || '尚未進房'),
+        '頻道：' + channelStatus,
+        'Presence 登記：' + presenceTrackStatus,
+        '老師在線：' + (currentRole === 'student' ? teacherOnline ? '是' : '尚未偵測到' : '不適用'),
+        '老師最後狀態：' + (lastTeacherStateAt ? new Date(lastTeacherStateAt).toLocaleTimeString('zh-TW') : '尚未收到'),
+        '在線學生：' + onlineStudents.size,
+        '輪次：' + roundId + ' / 版號：' + revision,
+        '是否開放：' + (isOpen ? '是' : '否'),
+        '最後送出：' + lastBroadcast,
+        '最後收到：' + lastReceive,
+        '最近錯誤：' + lastNetworkError,
+        '檢查時間：' + new Date().toLocaleTimeString('zh-TW')
+      ].join('\n');
+    }
+    function renderDiagnostics() {
+      const el = document.getElementById('diagnosticText');
+      if (el) el.textContent = diagnosticText();
+    }
+    async function copyDiagnostics() {
+      try { await navigator.clipboard.writeText(diagnosticText()); alert('診斷內容已複製，可貼到對話給我。'); }
+      catch (_) { alert(diagnosticText()); }
+    }
 
+    let myStudentId = sessionStorage.getItem('chenyu_student_id');
+    if (!myStudentId) {
+      myStudentId = 'stu_' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+      sessionStorage.setItem('chenyu_student_id', myStudentId);
+    }
+    const myClientId = 'client_' + Math.random().toString(36).slice(2);
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(freq = 600, duration = 0.15, type = 'sine') {
+    function playBeep(freq = 600, duration = 0.15) {
       try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {}
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+      } catch (_) {}
     }
-
-    function randomRoomCode() {
-      document.getElementById('roomCodeInput').value = Math.floor(1000 + Math.random() * 9000);
+    function randomRoomCode() { document.getElementById('roomCodeInput').value = Math.floor(1000 + Math.random() * 9000); }
+    function updateConnUI(connected, message) {
+      isConnected = connected;
+      document.getElementById('connectionStatus').className = `flex items-center gap-2 text-sm font-bold px-3.5 py-1.5 rounded-full border ${connected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`;
+      document.getElementById('connDot').className = `w-2.5 h-2.5 rounded-full ${connected ? 'bg-emerald-500' : 'bg-rose-500'}`;
+      document.getElementById('connText').textContent = message;
+      if (currentRole === 'student') updateStudentButton();
+      if (currentRole === 'teacher') document.getElementById('toggleBuzzBtn').disabled = !connected;
+      renderDiagnostics();
     }
-
     function joinRoom(role) {
       const code = document.getElementById('roomCodeInput').value.trim();
       const name = document.getElementById('userNameInput').value.trim();
-
-      if (!code || code.length < 3) {
-        alert('請輸入 3 或 4 位數字的房間代碼！');
-        return;
-      }
-
-      if (role === 'student' && !name) {
-        alert('請輸入您的暱稱或座號姓名！');
-        return;
-      }
-
-      currentRole = role;
-      roomCode = code;
-      userName = name || '老師';
-
+      if (!/^\d{4}$/.test(code)) return alert('請輸入完整的 4 位數字房間代碼。');
+      if (role === 'student' && !name) return alert('請輸入座號或姓名。');
+      if (!supabaseClient) return alert('網站尚未設定正確 Supabase API Key，請老師先完成設定。');
+      currentRole = role; roomCode = code; userName = name || '老師';
       document.getElementById('loginView').classList.add('hidden');
-
       if (role === 'teacher') {
         document.getElementById('teacherView').classList.remove('hidden');
         document.getElementById('teacherRoomCode').textContent = roomCode;
+        // 刷新同一台老師裝置時，恢復上一輪控制狀態。
+        try {
+          const old = JSON.parse(sessionStorage.getItem(`teacher_${roomCode}`) || 'null');
+          if (old) { isOpen = !!old.isOpen; roundId = old.roundId || 0; revision = old.revision || 0; rankedStudents = old.rankedStudents || []; window.roundOpenedAt = old.roundOpenedAt || Date.now(); }
+        } catch (_) {}
+        refreshTeacherToggle(); updateRankUI();
       } else {
         document.getElementById('studentView').classList.remove('hidden');
         document.getElementById('studentRoomBadge').textContent = roomCode;
         document.getElementById('studentNameBadge').textContent = userName;
+        updateStudentButton();
       }
-
-      setupRealtimeSpace();
+      setupRealtime();
+      renderDiagnostics();
     }
-
-    // 核心空間設定：結合 Presence (在線空間同在) 與 Broadcast (雙向廣播)
-    function setupRealtimeSpace() {
+    function saveTeacherState() {
+      if (currentRole !== 'teacher') return;
+      sessionStorage.setItem(`teacher_${roomCode}`, JSON.stringify({ isOpen, roundId, revision, rankedStudents, roundOpenedAt: window.roundOpenedAt || Date.now() }));
+    }
+    function teacherSnapshot() {
+      return { type: 'STATE', roundId, revision, isOpen, rankedStudents };
+    }
+    async function sendBroadcast(payload) {
+      if (!channel || !isConnected) return false;
+      try {
+        const result = await channel.send({ type: 'broadcast', event: 'buzzer_event', payload: { ...payload, sender: myClientId } });
+        lastBroadcast = `${payload.type}：${result}`;
+        if (result !== 'ok') lastNetworkError = '廣播未確認：' + String(result);
+        renderDiagnostics();
+        return result === 'ok';
+      } catch (e) { lastNetworkError = '發送失敗：' + (e?.message || String(e)); renderDiagnostics(); console.error('broadcast failed', e); return false; }
+    }
+    function announceState() { if (currentRole === 'teacher') { saveTeacherState(); sendBroadcast(teacherSnapshot()); } }
+    function setupRealtime() {
+      // public broadcast channel + presence，手機與電腦必須使用同一個 Supabase 專案。
+      channelStatus = '正在訂閱';
+      channel = supabaseClient.channel(`chenyu_room_${roomCode}`, {
+        config: { private: false, broadcast: { self: false, ack: true }, presence: { key: myClientId } }
+      });
+      channel
+        .on('broadcast', { event: 'buzzer_event' }, ({ payload }) => {
+          lastReceive = String(payload?.type || '未知') + ' @ ' + new Date().toLocaleTimeString('zh-TW');
+          renderDiagnostics(); handleIncomingMessage(payload);
+        })
+        .on('presence', { event: 'sync' }, () => {
+          if (!channel) return;
+          onlineStudents.clear(); teacherOnline = false;
+          for (const records of Object.values(channel.presenceState())) {
+            for (const p of records) {
+              if (p.role === 'student' && p.id) onlineStudents.set(p.id, p.name || '未命名');
+              if (p.role === 'teacher') teacherOnline = true;
+            }
+          }
+          if (currentRole === 'teacher') {
+            updateOnlineUI();
+            // Presence 已同步時，把最新狀態再廣播一次，照顧剛進房的學生。
+            if (isConnected) announceState();
+          } else if (teacherOnline && isConnected && !lastTeacherStateAt) {
+            sendBroadcast({ type: 'REQUEST_STATE', studentId: myStudentId });
+          }
+          renderDiagnostics();
+        })
+        .subscribe(async (status, error) => {
+          channelStatus = status;
+          if (error) lastNetworkError = error.message || String(error);
+          renderDiagnostics();
+          if (status === 'SUBSCRIBED') {
+            updateConnUI(true, '即時連線中');
+            try {
+              presenceTrackStatus = await channel.track({ role: currentRole, id: myStudentId, name: userName });
+              if (presenceTrackStatus !== 'ok') lastNetworkError = 'Presence 登記未確認：' + String(presenceTrackStatus);
+            } catch (e) { presenceTrackStatus = '失敗'; lastNetworkError = 'Presence 失敗：' + (e?.message || String(e)); }
+            renderDiagnostics();
+            if (currentRole === 'teacher') {
+              announceState();
+            } else {
+              // 新加入或重連後，向老師請求最新狀態，不必等到下一題。
+              isOpen = false; pendingBuzz = false; lastTeacherStateAt = 0; updateStudentButton();
+              sendBroadcast({ type: 'REQUEST_STATE', studentId: myStudentId });
+              if (stateRequestTimer) clearInterval(stateRequestTimer);
+              // 只在沒有收到狀態時定期補問，不靠一次性封包決定是否同步。
+              stateRequestTimer = setInterval(() => {
+                if (isConnected && Date.now() - lastTeacherStateAt > 12000) {
+                  sendBroadcast({ type: 'REQUEST_STATE', studentId: myStudentId });
+                }
+              }, 6000);
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            updateConnUI(false, `連線異常：${status}`);
+            renderDiagnostics();
+          }
+        });
+    }
+    function handleIncomingMessage(msg) {
+      if (!msg || msg.sender === myClientId) return;
+      if (msg.type === 'REQUEST_STATE' && currentRole === 'teacher') {
+        announceState(); return;
+      }
+      if (msg.type === 'STATE' && currentRole === 'student') {
+        lastTeacherStateAt = Date.now();
+        // 按照輪次/版號防止舊封包蓋過新榜單。
+        if (msg.roundId < roundId || (msg.roundId === roundId && msg.revision < revision)) return;
+        const changedRound = msg.roundId !== roundId;
+        roundId = msg.roundId; revision = msg.revision;
+        isOpen = !!msg.isOpen;
+        rankedStudents = Array.isArray(msg.rankedStudents) ? msg.rankedStudents : [];
+        if (changedRound) pendingBuzz = false;
+        hasPressed = rankedStudents.some(s => s.id === myStudentId) || (pendingBuzz && !changedRound);
+        updateStudentButton(); updateRankUI();
+        return;
+      }
+      if (msg.type === 'STUDENT_BUZZ' && currentRole === 'teacher') {
+        // 僅老師確認並公布排名，學生不再各自排序。
+        if (!isOpen || msg.roundId !== roundId || !msg.id || rankedStudents.some(s => s.id === msg.id)) return;
+        const elapsed = Math.max(0, Date.now() - (window.roundOpenedAt || Date.now()));
+        rankedStudents.push({ id: msg.id, name: String(msg.name || '學生').slice(0, 40), diff: `+${(elapsed / 1000).toFixed(3)}s` });
+        revision += 1; updateRankUI(); announceState(); playBeep(1200, 0.1);
+      }
+    }
+    function updateStudentButton() {
+      if (currentRole !== 'student') return;
+      const btn = document.getElementById('mainBuzzBtn');
+      const active = isConnected && isOpen && !hasPressed;
+      btn.disabled = !active;
+      btn.className = `buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 overflow-hidden ${active ? 'pulse-glow border-emerald-400 bg-emerald-500 text-white cursor-pointer' : hasPressed ? 'border-indigo-300 bg-indigo-500 text-white' : 'border-slate-200 bg-slate-200 text-slate-500 cursor-not-allowed'}`;
+      document.getElementById('btnStatusText').textContent = !isConnected ? '連線中' : hasPressed ? '已搶答！' : isOpen ? '立刻搶答！' : '等待開放';
+      document.getElementById('studentFeedback').textContent = !isConnected ? '尚未連上教室，請確認網路與 Supabase 設定。' : hasPressed ? '正在等待老師端確認排名…' : isOpen ? '🔥 老師已開放，快按！' : '等待老師開放題目…';
+    }
+    function updateOnlineUI() {
+      if (currentRole !== 'teacher') return;
+      document.getElementById('onlineCountBadge').textContent = `${onlineStudents.size} 人`;
+      const area = document.getElementById('onlineListNames');
+      area.replaceChildren();
+      if (!onlineStudents.size) { area.textContent = '等待學生加入中…'; return; }
+      for (const name of onlineStudents.values()) {
+        const node = document.createElement('span'); node.className = 'bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-lg font-bold';
+        node.textContent = name; area.appendChild(node);
+      }
+    }
+    function makeRankItem(s, idx, teacher) {
+      const outer = document.createElement('div');
+      outer.className = `flex items-center justify-between p-3 rounded-xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : s.id === myStudentId && !teacher ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`;
+      const who = document.createElement('span'); who.className = 'font-bold text-slate-800';
+      who.textContent = `${idx + 1}. ${s.name}${!teacher && s.id === myStudentId ? '（你）' : ''}`;
+      const timing = document.createElement('span'); timing.className = 'font-mono text-xs text-slate-500';
+      timing.textContent = s.diff; outer.append(who, timing); return outer;
+    }
+    function updateRankUI() {
+      const teacher = currentRole === 'teacher';
+      const area = document.getElementById(teacher ? 'rankingList' : 'studentRankingList');
+      if (!area) return;
+      document.getElementById(teacher ? 'buzzCountBadge' : 'studentBuzzCountBadge').textContent = `${rankedStudents.length} 人搶答`;
+      area.replaceChildren();
+      if (!rankedStudents.length) {
+        area.textContent = teacher ? '等待學生搶答…' : '目前還沒有人搶答';
+      } else {
+        rankedStudents.forEach((s, idx) => area.appendChild(makeRankItem(s, idx, teacher)));
+      }
+      if (teacher) {
+        document.getElementById('firstPlaceName').textContent = rankedStudents[0]?.name || '等待搶答…';
+        document.getElementById('firstPlaceTime').textContent = rankedStudents[0]?.diff || '--';
+        document.getElementById('rewardBtn').classList.toggle('hidden', !rankedStudents.length);
+      } else {
+        const index = rankedStudents.findIndex(s => s.id === myStudentId);
+        document.getElementById('myRankBadge').textContent = index >= 0 ? `你是第 ${index + 1} 名！` : '';
+      }
+    }
+    function refreshTeacherToggle() {
+      const btn = document.getElementById('toggleBuzzBtn');
+      btn.textContent = isOpen ? '🔒 鎖定按鈕' : '📢 開放搶答！';
+      btn.className = `px-8 py-4 text-white font-black text-2xl rounded-2xl shadow-lg transition ${isOpen ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600'}`;
+    }
+    function toggleBuzzState() {
+      if (currentRole !== 'teacher' || !isConnected) return;
+      if (isOpen) { isOpen = false; } else {
+        isOpen = true; roundId += 1; rankedStudents = []; window.roundOpenedAt = Date.now();
+      }
+      revision += 1; refreshTeacherToggle(); updateRankUI(); announceState();
+    }
+    function resetBuzzers() {
+      if (currentRole !== 'teacher' || !isConnected) return;
+      isOpen = false; roundId += 1; revision += 1; rankedStudents = [];
+      refreshTeacherToggle(); updateRankUI(); announceState();
+    }
+    async function studentPressBuzz() {
+      if (currentRole !== 'student' || !isConnected || !isOpen || hasPressed) return;
+      hasPressed = true; pendingBuzz = true; updateStudentButton(); playBeep(1000, 0.15);
+      const ok = await sendBroadcast({ type: 'STUDENT_BUZZ', roundId, id: myStudentId, name: userName });
+      if (!ok) {
+        hasPressed = false; pendingBuzz = false; updateStudentButton();
+        alert('搶答訊息未送達，請檢查網路後重試。');
+      }
+    }
+    function awardPoint() { if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); playBeep(900, 0.3); }
+    function openQrModal() {
+      document.getElementById('qrModal').classList.remove('hidden');
+      document.getElementById('qrModalRoomCode').textContent = roomCode;
+      const target = document.getElementById('qrcodeContainer');
+      const info = document.getElementById('qrLinkText');
+      target.replaceChildren();
+      // QR 一律指向正式 GitHub Pages 網址，絕不把電腦的 file:// 塞進 QR。
+      // 本機開發時可預覽 QR，但一定要先把這份新版部署成 index.html。
+      const isLocal = location.protocol === 'file:';
+      const url = new URL(isLocal ? PUBLIC_SITE_URL : location.href);
+      url.search = '';
+      url.hash = '';
+      url.searchParams.set('room', roomCode);
+      info.textContent = (isLocal ? '⚠️ 請先發布新版 index.html，否則掃碼會打開 GitHub 上的舊版。\n' : '') + '學生加入網址：' + url.href;
+      if (typeof QRCode === 'undefined') {
+        target.textContent = 'QR Code 套件載入失敗，請重新整理或檢查網路。';
+        return;
+      }
+      new QRCode(target, { text: url.href, width: 180, height: 180, colorDark: '#1e1b4b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    }
+    function closeQrModal() { document.getElementById('qrModal').classList.add('hidden'); }
+    window.addEventListener('DOMContentLoaded', () => {
+      const room = new URLSearchParams(location.search).get('room');
+      if (room && /^\d{4}$/.test(room)) document.getElementById('roomCodeInput').value = room;
+      if (!CONFIGURED) updateConnUI(false, '尚未設定 Supabase Key');
+      if (!window.supabase) { lastNetworkError = 'Supabase JS 套件載入失敗（可能是網路或 CDN 被擋）'; updateConnUI(false, 'SDK 載入失敗'); }
+      diagnosticTimer = setInterval(renderDiagnostics, 3000);
+      renderDiagnostics();
+    });
+  </script>
+</body>
+</html>
