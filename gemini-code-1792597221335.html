@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>課堂搶答系統</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- 引入即時雲端同步引擎 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
@@ -37,7 +37,6 @@
   <header class="bg-white/95 backdrop-blur border-b border-indigo-100 shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- 直接讀取您在 GitHub 上的原創圖片 -->
         <div class="w-14 h-14 bg-white rounded-2xl p-1 border border-indigo-100 flex items-center justify-center shadow-sm overflow-hidden">
           <img src="yu_logo.png" alt="Chen Yu 原創吉祥物" class="w-full h-full object-contain">
         </div>
@@ -46,9 +45,9 @@
           <p class="text-xs text-indigo-600 font-bold tracking-wider">即時毫秒判定・公平競賽</p>
         </div>
       </div>
-      <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="connText">系統已連線</span>
+      <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200">
+        <span id="connDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <span id="connText">連線中...</span>
       </div>
     </div>
   </header>
@@ -58,7 +57,6 @@
 
     <!-- 1. 登入選單（首頁） -->
     <div id="loginView" class="max-w-md mx-auto w-full bg-white border border-indigo-100 rounded-3xl p-8 shadow-xl text-center">
-      <!-- 登入卡片原創圖 -->
       <div class="w-28 h-28 mx-auto mb-3 flex items-center justify-center">
         <img src="yu_logo.png" alt="Chen Yu 原創吉祥物" class="w-full h-full object-contain">
       </div>
@@ -117,7 +115,6 @@
 
       <!-- 搶答戰況排行榜 -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 冠軍特寫 -->
         <div class="md:col-span-1 bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-amber-200 rounded-3xl p-6 text-center flex flex-col justify-center items-center shadow-md">
           <span class="text-amber-600 font-black text-sm tracking-widest uppercase mb-1">👑 最先搶到者</span>
           <div id="firstPlaceName" class="text-4xl md:text-5xl font-black text-slate-800 my-4">等待搶答...</div>
@@ -127,7 +124,6 @@
           </button>
         </div>
 
-        <!-- 排名列表 -->
         <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-indigo-100 shadow-lg">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
@@ -151,7 +147,6 @@
         <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
       </div>
 
-      <!-- 超大搶答按鈕（中央呈現原創圖） -->
       <div class="relative py-4">
         <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
           class="buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
@@ -168,7 +163,7 @@
     </div>
   </main>
 
-  <!-- QR Code 彈出視窗 -->
+  <!-- QR Code 視窗 -->
   <div id="qrModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
       <h3 class="text-2xl font-black text-slate-800">學生掃碼立即加入</h3>
@@ -186,23 +181,30 @@
     </div>
   </div>
 
-  <!-- 頁尾版權署名（左側放原創圖，右側署名） -->
   <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
     <img src="yu_logo.png" alt="Chen Yu" class="w-6 h-6 object-contain inline-block">
     <span>網站由 CHEN YU 製作</span>
   </footer>
 
-  <!-- 系統核心邏輯 -->
   <script>
+    // 即時雲端資料庫設定
+    const firebaseConfig = {
+      databaseURL: "https://chenyu-buzzer-default-rtdb.firebaseio.com"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
     let currentRole = null;
     let roomCode = '';
     let userName = '';
-    let isOpen = false;
-    let startTime = 0;
-    let rankedStudents = [];
+    let currentRoomRef = null;
+    let isBuzzOpen = false;
+    let openTimestamp = 0;
     let hasPressed = false;
-    let eventSource = null;
 
+    // 音效產生
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 600, duration = 0.15, type = 'sine') {
       try {
@@ -242,122 +244,159 @@
       userName = name || '老師';
 
       document.getElementById('loginView').classList.add('hidden');
+      currentRoomRef = db.ref(`rooms/${roomCode}`);
+
+      // 監聽連線狀態
+      db.ref('.info/connected').on('value', (snap) => {
+        const statusEl = document.getElementById('connectionStatus');
+        const textEl = document.getElementById('connText');
+        const dotEl = document.getElementById('connDot');
+        if (snap.val() === true) {
+          statusEl.className = "flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200";
+          dotEl.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+          textEl.textContent = '即時連線中';
+        } else {
+          statusEl.className = "flex items-center gap-2 text-sm font-bold bg-rose-50 text-rose-700 px-3 py-1.5 rounded-full border border-rose-200";
+          dotEl.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+          textEl.textContent = '連線中斷';
+        }
+      });
 
       if (role === 'teacher') {
         document.getElementById('teacherView').classList.remove('hidden');
         document.getElementById('teacherRoomCode').textContent = roomCode;
-        initPubSub(roomCode);
+        initTeacherListener();
       } else {
         document.getElementById('studentView').classList.remove('hidden');
         document.getElementById('studentRoomBadge').textContent = roomCode;
         document.getElementById('studentNameBadge').textContent = userName;
-        initPubSub(roomCode);
+        initStudentListener();
       }
     }
 
-    function initPubSub(room) {
-      const topic = `chenyu_buzz_${room}`;
-      if (eventSource) eventSource.close();
-      eventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const payload = JSON.parse(data.message);
-          handleMessage(payload);
-        } catch (e) {}
-      };
+    // 老師端監聽
+    function initTeacherListener() {
+      // 監聽題目狀態
+      currentRoomRef.child('status').on('value', (snap) => {
+        const val = snap.val() || { isOpen: false };
+        isBuzzOpen = val.isOpen;
+        openTimestamp = val.openTimestamp || 0;
 
-      eventSource.onerror = () => {
-        document.getElementById('connText').textContent = '重連中...';
-      };
+        const toggleBtn = document.getElementById('toggleBuzzBtn');
+        if (isBuzzOpen) {
+          toggleBtn.textContent = '🔒 鎖定按鈕';
+          toggleBtn.className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        } else {
+          toggleBtn.textContent = '📢 開放搶答！';
+          toggleBtn.className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        }
+      });
 
-      eventSource.onopen = () => {
-        document.getElementById('connText').textContent = '即時連線中';
-      };
+      // 監聽搶答名單（依伺服器時間排序）
+      currentRoomRef.child('buzzes').orderByChild('pressTime').on('value', (snap) => {
+        const listContainer = document.getElementById('rankingList');
+        const badge = document.getElementById('buzzCountBadge');
+        const buzzes = [];
+        snap.forEach(child => {
+          buzzes.push(child.val());
+        });
+
+        badge.textContent = `${buzzes.length} 人搶答`;
+
+        if (buzzes.length === 0) {
+          document.getElementById('firstPlaceName').textContent = '等待搶答...';
+          document.getElementById('firstPlaceTime').textContent = '--';
+          document.getElementById('rewardBtn').classList.add('hidden');
+          listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
+          return;
+        }
+
+        // 第一名特寫
+        const first = buzzes[0];
+        document.getElementById('firstPlaceName').textContent = first.name;
+        const firstDiff = ((first.pressTime - openTimestamp) / 1000).toFixed(3);
+        document.getElementById('firstPlaceTime').textContent = firstDiff > 0 ? `+${firstDiff}s` : '最速按下';
+        document.getElementById('rewardBtn').classList.remove('hidden');
+
+        // 渲染榜單
+        listContainer.innerHTML = buzzes.map((s, idx) => {
+          const diff = ((s.pressTime - openTimestamp) / 1000).toFixed(3);
+          const timeStr = diff > 0 ? `+${diff}s` : '0.000s';
+          return `
+            <div class="flex items-center justify-between p-3.5 rounded-2xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'} text-sm">
+                  ${idx + 1}
+                </span>
+                <span class="font-black text-xl text-slate-800">${s.name}</span>
+              </div>
+              <span class="font-bold text-slate-500 text-sm font-mono">${timeStr}</span>
+            </div>
+          `;
+        }).join('');
+      });
     }
 
-    function broadcast(payload) {
-      const topic = `chenyu_buzz_${roomCode}`;
-      fetch(`https://ntfy.sh/${topic}`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      }).catch(err => console.error(err));
-    }
+    // 學生端監聽
+    function initStudentListener() {
+      currentRoomRef.child('status').on('value', (snap) => {
+        const val = snap.val() || { isOpen: false };
+        isBuzzOpen = val.isOpen;
+        openTimestamp = val.openTimestamp || 0;
 
-    function handleMessage(msg) {
-      if (msg.action === 'OPEN_BUZZ') {
-        isOpen = true;
-        startTime = msg.timestamp;
-        hasPressed = false;
-        playBeep(880, 0.2);
+        const btn = document.getElementById('mainBuzzBtn');
+        const feedback = document.getElementById('studentFeedback');
 
-        if (currentRole === 'student') {
-          const btn = document.getElementById('mainBuzzBtn');
+        if (isBuzzOpen) {
+          hasPressed = false;
           btn.disabled = false;
           btn.className = "buzz-btn pulse-glow w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-emerald-400 bg-emerald-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden";
           document.getElementById('btnStatusText').textContent = '立刻搶答！';
-          document.getElementById('studentFeedback').innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
-        }
-      } 
-      else if (msg.action === 'RESET_BUZZ') {
-        isOpen = false;
-        hasPressed = false;
-        rankedStudents = [];
-        updateRankUI();
-
-        if (currentRole === 'student') {
-          const btn = document.getElementById('mainBuzzBtn');
+          feedback.innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
+          playBeep(880, 0.2);
+        } else {
           btn.disabled = true;
           btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-not-allowed overflow-hidden";
           document.getElementById('btnStatusText').textContent = '已鎖定';
-          document.getElementById('studentFeedback').textContent = '等待下一題...';
+          feedback.textContent = '等待下一題...';
         }
-      }
-      else if (msg.action === 'STUDENT_BUZZ') {
-        if (currentRole === 'teacher') {
-          if (!rankedStudents.some(s => s.name === msg.name)) {
-            const diff = ((msg.pressTime - startTime) / 1000).toFixed(3);
-            rankedStudents.push({ name: msg.name, time: diff > 0 ? `+${diff}s` : '0.000s' });
-            playBeep(1200, 0.1);
-            updateRankUI();
-          }
-        }
-      }
+      });
     }
 
+    // 老師開關狀態
     function toggleBuzzState() {
-      if (!isOpen) {
-        rankedStudents = [];
-        updateRankUI();
-        broadcast({ action: 'OPEN_BUZZ', timestamp: Date.now() });
-        document.getElementById('toggleBuzzBtn').textContent = '🔒 鎖定按鈕';
-        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
-        isOpen = true;
+      if (!isBuzzOpen) {
+        currentRoomRef.child('buzzes').remove();
+        currentRoomRef.child('status').set({
+          isOpen: true,
+          openTimestamp: Date.now()
+        });
       } else {
-        broadcast({ action: 'RESET_BUZZ' });
-        document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
-        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
-        isOpen = false;
+        currentRoomRef.child('status').update({
+          isOpen: false
+        });
       }
     }
 
     function resetBuzzers() {
-      broadcast({ action: 'RESET_BUZZ' });
-      document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
-      document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
-      isOpen = false;
-      rankedStudents = [];
-      updateRankUI();
+      currentRoomRef.child('buzzes').remove();
+      currentRoomRef.child('status').set({
+        isOpen: false,
+        openTimestamp: 0
+      });
     }
 
+    // 學生點擊送出
     function studentPressBuzz() {
-      if (!isOpen || hasPressed) return;
+      if (!isBuzzOpen || hasPressed) return;
       hasPressed = true;
       playBeep(1000, 0.15);
 
       const pressTime = Date.now();
-      broadcast({ action: 'STUDENT_BUZZ', name: userName, pressTime: pressTime });
+      currentRoomRef.child('buzzes').push({
+        name: userName,
+        pressTime: pressTime
+      });
 
       const btn = document.getElementById('mainBuzzBtn');
       btn.disabled = true;
@@ -366,39 +405,10 @@
       document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已成功搶答！請看黑板大螢幕 🎯</span>';
     }
 
-    function updateRankUI() {
-      const listContainer = document.getElementById('rankingList');
-      const badge = document.getElementById('buzzCountBadge');
-      badge.textContent = `${rankedStudents.length} 人搶答`;
-
-      if (rankedStudents.length === 0) {
-        document.getElementById('firstPlaceName').textContent = '等待搶答...';
-        document.getElementById('firstPlaceTime').textContent = '--';
-        document.getElementById('rewardBtn').classList.add('hidden');
-        listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
-        return;
-      }
-
-      document.getElementById('firstPlaceName').textContent = rankedStudents[0].name;
-      document.getElementById('firstPlaceTime').textContent = rankedStudents[0].time;
-      document.getElementById('rewardBtn').classList.remove('hidden');
-
-      listContainer.innerHTML = rankedStudents.map((student, idx) => `
-        <div class="flex items-center justify-between p-3.5 rounded-2xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}">
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'} text-sm">
-              ${idx + 1}
-            </span>
-            <span class="font-black text-xl text-slate-800">${student.name}</span>
-          </div>
-          <span class="font-bold text-slate-500 text-sm font-mono">${student.time}</span>
-        </div>
-      `).join('');
-    }
-
     function clearRankList() {
-      rankedStudents = [];
-      updateRankUI();
+      if (currentRoomRef) {
+        currentRoomRef.child('buzzes').remove();
+      }
     }
 
     function awardPoint() {
@@ -413,11 +423,7 @@
       const container = document.getElementById('qrcodeContainer');
       container.innerHTML = '';
 
-      let targetUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
-      if (window.location.protocol === 'file:') {
-        targetUrl = `https://chenyu-clc.github.io/buzzer/?room=${roomCode}`;
-      }
-
+      const targetUrl = `https://chenyu-clc.github.io/buzzer/?room=${roomCode}`;
       new QRCode(container, {
         text: targetUrl,
         width: 180,
