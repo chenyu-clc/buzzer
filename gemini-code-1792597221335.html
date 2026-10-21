@@ -39,12 +39,12 @@
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
-          <p class="text-xs text-indigo-600 font-bold tracking-wider">雲端高抗阻通道・毫秒判定</p>
+          <p class="text-xs text-indigo-600 font-bold tracking-wider">即時毫秒判定・公平競賽</p>
         </div>
       </div>
       <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200">
         <span id="connDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="connText">即時雲端已就緒</span>
+        <span id="connText">系統已連線</span>
       </div>
     </div>
   </header>
@@ -110,7 +110,9 @@
         </div>
       </div>
 
+      <!-- 戰況與排行榜 -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 第一名特寫展示 -->
         <div class="md:col-span-1 bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-amber-200 rounded-3xl p-6 text-center flex flex-col justify-center items-center shadow-md">
           <span class="text-amber-600 font-black text-sm tracking-widest uppercase mb-1">👑 最先搶到者</span>
           <div id="firstPlaceName" class="text-4xl md:text-5xl font-black text-slate-800 my-4">等待搶答...</div>
@@ -120,13 +122,14 @@
           </button>
         </div>
 
+        <!-- 即時榜單 -->
         <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-indigo-100 shadow-lg">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
               <span>⚡ 即時搶答榜單</span>
               <span id="buzzCountBadge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-bold">0 人搶答</span>
             </h3>
-            <button onclick="clearRankList()" class="text-xs font-bold text-slate-400 hover:text-slate-600">清空榜單</button>
+            <span class="text-xs font-bold text-slate-400">毫秒高精度排序</span>
           </div>
           <div id="rankingList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
             <div class="text-center py-12 text-slate-400 font-bold">按上方「開放搶答」讓學生開始按鈕！</div>
@@ -135,26 +138,40 @@
       </div>
     </div>
 
-    <!-- 3. 學生端搶答畫面 -->
-    <div id="studentView" class="hidden flex flex-col items-center justify-center space-y-6 text-center">
-      <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-indigo-100 shadow-sm">
+    <!-- 3. 學生端畫面（按鈕 + 即時全班戰況榜） -->
+    <div id="studentView" class="hidden flex flex-col items-center justify-center space-y-6 text-center max-w-lg mx-auto w-full">
+      <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-indigo-100 shadow-sm w-full flex justify-between items-center">
         <span class="text-slate-500 font-bold">房間：<span id="studentRoomBadge" class="text-indigo-600 font-black text-xl">----</span></span>
-        <span class="mx-2 text-slate-300">|</span>
         <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
       </div>
 
-      <div class="relative py-4">
+      <!-- 超大搶答按鈕 -->
+      <div class="relative py-2">
         <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
-          class="buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
-          <div class="w-28 h-28 flex items-center justify-center pointer-events-none">
+          class="buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
+          <div class="w-24 h-24 flex items-center justify-center pointer-events-none">
             <img src="yu_logo.png" alt="原創標誌" class="w-full h-full object-contain filter drop-shadow">
           </div>
-          <span id="btnStatusText" class="text-3xl font-black">準備中</span>
+          <span id="btnStatusText" class="text-2xl font-black">準備中</span>
         </button>
       </div>
 
-      <div id="studentFeedback" class="text-2xl font-black text-slate-500 min-h-[2rem]">
+      <div id="studentFeedback" class="text-xl font-black text-slate-500 min-h-[2rem]">
         等待老師開放題目...
+      </div>
+
+      <!-- 學生端專屬：全班即時搶答戰況榜單 -->
+      <div class="bg-white rounded-3xl p-5 border border-indigo-100 shadow-md w-full text-left">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="text-base font-black text-slate-700 flex items-center gap-1.5">
+            <span>📊 全班搶答戰況</span>
+            <span id="studentBuzzCountBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">0 人</span>
+          </h4>
+          <span id="myRankBadge" class="text-xs font-black text-indigo-600"></span>
+        </div>
+        <div id="studentRankingList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-sm">
+          <div class="text-center py-4 text-slate-400 font-bold text-xs">題目開放後，將即時顯示全班排名</div>
+        </div>
       </div>
     </div>
   </main>
@@ -183,8 +200,8 @@
   </footer>
 
   <script>
-    // 使用標準 HTTPS REST 通道（絕不被任何防火牆封鎖）
-    const API_BASE = "https://buzzer-sync-default-rtdb.firebaseio.com/rooms";
+    // 雲端資料庫 REST API
+    const DB_URL = "https://buzzer-sync-default-rtdb.firebaseio.com/rooms";
 
     let currentRole = null;
     let roomCode = '';
@@ -193,6 +210,7 @@
     let openTimestamp = 0;
     let hasPressed = false;
     let syncTimer = null;
+    let myStudentId = 's_' + Math.random().toString(36).substring(2, 9); // 每位學生專屬唯一識別碼
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 600, duration = 0.15, type = 'sine') {
@@ -237,7 +255,7 @@
       if (role === 'teacher') {
         document.getElementById('teacherView').classList.remove('hidden');
         document.getElementById('teacherRoomCode').textContent = roomCode;
-        resetBuzzers(); // 老師開房先重置資料庫
+        resetBuzzers();
         startPolling();
       } else {
         document.getElementById('studentView').classList.remove('hidden');
@@ -247,62 +265,37 @@
       }
     }
 
-    // 啟動高頻極速同步輪詢（每 300 毫秒同步一次，走標準 HTTPS）
+    // 高頻同步輪詢 (每 280ms 抓取一次最新資料)
     function startPolling() {
       if (syncTimer) clearInterval(syncTimer);
-      syncRoomData();
-      syncTimer = setInterval(syncRoomData, 350);
+      fetchRoomData();
+      syncTimer = setInterval(fetchRoomData, 280);
     }
 
-    async function syncRoomData() {
+    async function fetchRoomData() {
       try {
-        const res = await fetch(`${API_BASE}/${roomCode}.json?t=${Date.now()}`);
+        const res = await fetch(`${DB_URL}/${roomCode}.json?nocache=${Date.now()}`);
         const data = await res.json();
         if (!data) return;
 
-        // 題目開關狀態
-        const isServerOpen = data.isOpen || false;
+        const serverOpen = data.isOpen || false;
         const serverOpenTime = data.openTime || 0;
+        const buzzes = data.buzzes || {};
 
-        if (currentRole === 'student') {
-          handleStudentSync(isServerOpen, serverOpenTime);
-        } else if (currentRole === 'teacher') {
-          handleTeacherSync(isServerOpen, serverOpenTime, data.buzzes);
+        // 整理搶答清單（依按下時間由小到大排序）
+        const sortedList = Object.values(buzzes).sort((a, b) => a.pressTime - b.pressTime);
+
+        if (currentRole === 'teacher') {
+          updateTeacherView(serverOpen, serverOpenTime, sortedList);
+        } else {
+          updateStudentView(serverOpen, serverOpenTime, sortedList);
         }
-      } catch (err) {
-        console.error("同步延遲:", err);
-      }
+      } catch (e) {}
     }
 
-    function handleStudentSync(isServerOpen, serverOpenTime) {
-      const btn = document.getElementById('mainBuzzBtn');
-      const feedback = document.getElementById('studentFeedback');
-
-      if (isServerOpen && !isOpen) {
-        // 老師剛開放
-        isOpen = true;
-        openTimestamp = serverOpenTime;
-        hasPressed = false;
-        playBeep(880, 0.2);
-
-        btn.disabled = false;
-        btn.className = "buzz-btn pulse-glow w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-emerald-400 bg-emerald-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden";
-        document.getElementById('btnStatusText').textContent = '立刻搶答！';
-        feedback.innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
-      } else if (!isServerOpen && isOpen) {
-        // 老師鎖定或重置
-        isOpen = false;
-        hasPressed = false;
-
-        btn.disabled = true;
-        btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-not-allowed overflow-hidden";
-        document.getElementById('btnStatusText').textContent = '已鎖定';
-        feedback.textContent = '等待下一題...';
-      }
-    }
-
-    function handleTeacherSync(isServerOpen, serverOpenTime, buzzesObj) {
-      isOpen = isServerOpen;
+    // 老師畫面渲染
+    function updateTeacherView(serverOpen, serverOpenTime, list) {
+      isOpen = serverOpen;
       openTimestamp = serverOpenTime;
 
       const toggleBtn = document.getElementById('toggleBuzzBtn');
@@ -314,34 +307,27 @@
         toggleBtn.className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
       }
 
-      // 整理搶答榜單
       const listContainer = document.getElementById('rankingList');
       const badge = document.getElementById('buzzCountBadge');
-      
-      let buzzList = [];
-      if (buzzesObj) {
-        buzzList = Object.values(buzzesObj).sort((a, b) => a.pressTime - b.pressTime);
-      }
+      badge.textContent = `${list.length} 人搶答`;
 
-      badge.textContent = `${buzzList.length} 人搶答`;
-
-      if (buzzList.length === 0) {
+      if (list.length === 0) {
         document.getElementById('firstPlaceName').textContent = '等待搶答...';
         document.getElementById('firstPlaceTime').textContent = '--';
         document.getElementById('rewardBtn').classList.add('hidden');
-        listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
+        listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按上方「開放搶答」讓學生開始按鈕！</div>';
         return;
       }
 
-      // 第一名
-      const first = buzzList[0];
+      // 第一名特寫
+      const first = list[0];
       document.getElementById('firstPlaceName').textContent = first.name;
       const firstDiff = ((first.pressTime - openTimestamp) / 1000).toFixed(3);
-      document.getElementById('firstPlaceTime').textContent = firstDiff > 0 ? `+${firstDiff}s` : '最先搶到！';
+      document.getElementById('firstPlaceTime').textContent = firstDiff > 0 ? `+${firstDiff} 秒` : '第一時間按下';
       document.getElementById('rewardBtn').classList.remove('hidden');
 
-      // 渲染列表
-      listContainer.innerHTML = buzzList.map((s, idx) => {
+      // 榜單
+      listContainer.innerHTML = list.map((s, idx) => {
         const diff = ((s.pressTime - openTimestamp) / 1000).toFixed(3);
         const timeStr = diff > 0 ? `+${diff}s` : '0.000s';
         return `
@@ -358,35 +344,88 @@
       }).join('');
     }
 
-    // 老師開關題目
+    // 學生畫面渲染
+    function updateStudentView(serverOpen, serverOpenTime, list) {
+      const btn = document.getElementById('mainBuzzBtn');
+      const feedback = document.getElementById('studentFeedback');
+      const studentListContainer = document.getElementById('studentRankingList');
+      const studentBadge = document.getElementById('studentBuzzCountBadge');
+      const myRankBadge = document.getElementById('myRankBadge');
+
+      studentBadge.textContent = `${list.length} 人`;
+
+      // 監聽開放/鎖定狀態切換
+      if (serverOpen && !isOpen) {
+        isOpen = true;
+        openTimestamp = serverOpenTime;
+        hasPressed = false;
+        playBeep(880, 0.2);
+
+        btn.disabled = false;
+        btn.className = "buzz-btn pulse-glow w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-emerald-400 bg-emerald-500 text-white font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden";
+        document.getElementById('btnStatusText').textContent = '立刻搶答！';
+        feedback.innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
+      } else if (!serverOpen && isOpen) {
+        isOpen = false;
+        hasPressed = false;
+
+        btn.disabled = true;
+        btn.className = "buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-not-allowed overflow-hidden";
+        document.getElementById('btnStatusText').textContent = '已鎖定';
+        feedback.textContent = '等待下一題...';
+        myRankBadge.textContent = '';
+      }
+
+      // 學生端渲染全班榜單
+      if (list.length === 0) {
+        studentListContainer.innerHTML = '<div class="text-center py-4 text-slate-400 font-bold text-xs">題目開放後，將即時顯示全班排名</div>';
+      } else {
+        // 檢查自己排第幾
+        const myIndex = list.findIndex(s => s.studentId === myStudentId);
+        if (myIndex !== -1) {
+          myRankBadge.textContent = `你是第 ${myIndex + 1} 名！`;
+        }
+
+        studentListContainer.innerHTML = list.map((s, idx) => `
+          <div class="flex items-center justify-between p-2 rounded-xl ${s.studentId === myStudentId ? 'bg-indigo-50 border border-indigo-200' : 'bg-slate-50'}">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs ${idx === 0 ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-600'}">
+                ${idx + 1}
+              </span>
+              <span class="font-bold text-slate-800 ${s.studentId === myStudentId ? 'text-indigo-600' : ''}">${s.name} ${s.studentId === myStudentId ? '(你)' : ''}</span>
+            </div>
+            <span class="text-xs font-mono text-slate-400">${idx === 0 ? '👑 第 1 名' : `第 ${idx + 1}`}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // 老師開關
     async function toggleBuzzState() {
       if (!isOpen) {
         openTimestamp = Date.now();
-        await fetch(`${API_BASE}/${roomCode}.json`, {
+        await fetch(`${DB_URL}/${roomCode}.json`, {
           method: 'PATCH',
           body: JSON.stringify({ isOpen: true, openTime: openTimestamp, buzzes: null })
         });
-        isOpen = true;
       } else {
-        await fetch(`${API_BASE}/${roomCode}.json`, {
+        await fetch(`${DB_URL}/${roomCode}.json`, {
           method: 'PATCH',
           body: JSON.stringify({ isOpen: false })
         });
-        isOpen = false;
       }
-      syncRoomData();
+      fetchRoomData();
     }
 
     async function resetBuzzers() {
-      await fetch(`${API_BASE}/${roomCode}.json`, {
+      await fetch(`${DB_URL}/${roomCode}.json`, {
         method: 'PUT',
         body: JSON.stringify({ isOpen: false, openTime: 0, buzzes: null })
       });
-      isOpen = false;
-      syncRoomData();
+      fetchRoomData();
     }
 
-    // 學生送出搶答
+    // 學生按下搶答（使用專屬 StudentId 獨立寫入，不互相衝突）
     async function studentPressBuzz() {
       if (!isOpen || hasPressed) return;
       hasPressed = true;
@@ -395,21 +434,21 @@
       const pressTime = Date.now();
       const btn = document.getElementById('mainBuzzBtn');
       btn.disabled = true;
-      btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-indigo-300 bg-indigo-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 overflow-hidden";
-      document.getElementById('btnStatusText').textContent = '已送出！';
-      document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已成功搶答！請看黑板大螢幕 🎯</span>';
+      btn.className = "buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-indigo-300 bg-indigo-500 text-white font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 overflow-hidden";
+      document.getElementById('btnStatusText').textContent = '已搶答！';
+      document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已送出！查看下方排名 🎯</span>';
 
-      await fetch(`${API_BASE}/${roomCode}/buzzes.json`, {
-        method: 'POST',
-        body: JSON.stringify({ name: userName, pressTime: pressTime })
+      // 獨立寫入資料庫
+      await fetch(`${DB_URL}/${roomCode}/buzzes/${myStudentId}.json`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          studentId: myStudentId,
+          name: userName,
+          pressTime: pressTime
+        })
       });
-    }
 
-    async function clearRankList() {
-      await fetch(`${API_BASE}/${roomCode}/buzzes.json`, {
-        method: 'DELETE'
-      });
-      syncRoomData();
+      fetchRoomData();
     }
 
     function awardPoint() {
