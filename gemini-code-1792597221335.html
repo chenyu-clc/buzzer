@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>課堂搶答系統</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .buzz-btn:active {
+      transform: scale(0.95);
+    }
+    .pulse-glow {
+      box-shadow: 0 0 35px rgba(34, 197, 94, 0.6);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); }
+      50% { transform: scale(1.03); box-shadow: 0 0 45px rgba(34, 197, 94, 0.85); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-sky-50 to-indigo-50 min-h-screen text-slate-800 flex flex-col justify-between">
+
+  <!-- 頂部導覽列 -->
+  <header class="bg-white/95 backdrop-blur border-b border-indigo-100 shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- 直接讀取您在 GitHub 上的原創圖片 -->
+        <div class="w-14 h-14 bg-white rounded-2xl p-1 border border-indigo-100 flex items-center justify-center shadow-sm overflow-hidden">
+          <img src="yu_logo.png" alt="Chen Yu 原創吉祥物" class="w-full h-full object-contain">
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
+          <p class="text-xs text-indigo-600 font-bold tracking-wider">即時毫秒判定・公平競賽</p>
+        </div>
+      </div>
+      <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="connText">系統已連線</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="max-w-5xl mx-auto px-4 py-6 w-full flex-1 flex flex-col justify-center">
+
+    <!-- 1. 登入選單（首頁） -->
+    <div id="loginView" class="max-w-md mx-auto w-full bg-white border border-indigo-100 rounded-3xl p-8 shadow-xl text-center">
+      <!-- 登入卡片原創圖 -->
+      <div class="w-28 h-28 mx-auto mb-3 flex items-center justify-center">
+        <img src="yu_logo.png" alt="Chen Yu 原創吉祥物" class="w-full h-full object-contain">
+      </div>
+      <h2 class="text-3xl font-black text-slate-800 mb-2">加入搶答教室</h2>
+      <p class="text-slate-500 text-sm mb-6">輸入房間代碼與座號名字，立即開始搶答！</p>
+
+      <div class="space-y-4 text-left">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">房間代碼 (4 位數字)</label>
+          <div class="flex gap-2">
+            <input id="roomCodeInput" type="number" pattern="[0-9]*" placeholder="例如：8888" maxlength="4"
+              class="w-full text-center tracking-widest text-3xl font-black border-2 border-indigo-200 rounded-2xl py-3 px-4 focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800">
+            <button onclick="randomRoomCode()" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold rounded-2xl border border-indigo-200 text-sm flex items-center justify-center">🎲 隨機</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">您的暱稱 / 座號姓名</label>
+          <input id="userNameInput" type="text" placeholder="例如：05號 小明"
+            class="w-full text-lg font-bold border-2 border-indigo-200 rounded-2xl py-3 px-4 focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800">
+        </div>
+
+        <div class="pt-4 space-y-3">
+          <button onclick="joinRoom('student')" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-2xl py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition transform active:scale-95">
+            我是學生，進入搶答！
+          </button>
+          <button onclick="joinRoom('teacher')" class="w-full bg-white hover:bg-slate-50 text-indigo-700 font-bold text-lg py-3 rounded-2xl border-2 border-indigo-200 transition">
+            我是老師（開啟主持大螢幕）
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 老師端控制面板 -->
+    <div id="teacherView" class="hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 border border-indigo-100 shadow-lg flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold text-slate-400 tracking-wider">搶答房間代碼</span>
+          <div class="flex items-center gap-3">
+            <span id="teacherRoomCode" class="text-5xl md:text-6xl font-black text-indigo-600 tracking-wider">----</span>
+            <button onclick="openQrModal()" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-sm flex items-center gap-1.5 shadow-sm">
+              <span>📱</span> 投影 QR Code
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="resetBuzzers()" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-base transition">
+            🔄 重置本題
+          </button>
+          <button id="toggleBuzzBtn" onclick="toggleBuzzState()" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg shadow-emerald-500/30 transition transform active:scale-95">
+            📢 開放搶答！
+          </button>
+        </div>
+      </div>
+
+      <!-- 搶答戰況排行榜 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 冠軍特寫 -->
+        <div class="md:col-span-1 bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-amber-200 rounded-3xl p-6 text-center flex flex-col justify-center items-center shadow-md">
+          <span class="text-amber-600 font-black text-sm tracking-widest uppercase mb-1">👑 最先搶到者</span>
+          <div id="firstPlaceName" class="text-4xl md:text-5xl font-black text-slate-800 my-4">等待搶答...</div>
+          <div id="firstPlaceTime" class="text-xl font-bold text-amber-700">--</div>
+          <button id="rewardBtn" onclick="awardPoint()" class="mt-4 hidden px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black text-lg rounded-xl shadow-md transition">
+            🎉 加分獎勵！
+          </button>
+        </div>
+
+        <!-- 排名列表 -->
+        <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-indigo-100 shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+              <span>⚡ 即時搶答榜單</span>
+              <span id="buzzCountBadge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-bold">0 人搶答</span>
+            </h3>
+            <button onclick="clearRankList()" class="text-xs font-bold text-slate-400 hover:text-slate-600">清空榜單</button>
+          </div>
+          <div id="rankingList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 學生端搶答畫面 -->
+    <div id="studentView" class="hidden flex flex-col items-center justify-center space-y-6 text-center">
+      <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-indigo-100 shadow-sm">
+        <span class="text-slate-500 font-bold">房間：<span id="studentRoomBadge" class="text-indigo-600 font-black text-xl">----</span></span>
+        <span class="mx-2 text-slate-300">|</span>
+        <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
+      </div>
+
+      <!-- 超大搶答按鈕（中央呈現原創圖） -->
+      <div class="relative py-4">
+        <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
+          class="buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
+          <div class="w-28 h-28 flex items-center justify-center pointer-events-none">
+            <img src="yu_logo.png" alt="原創標誌" class="w-full h-full object-contain filter drop-shadow">
+          </div>
+          <span id="btnStatusText" class="text-3xl font-black">準備中</span>
+        </button>
+      </div>
+
+      <div id="studentFeedback" class="text-2xl font-black text-slate-500 min-h-[2rem]">
+        等待老師開放題目...
+      </div>
+    </div>
+  </main>
+
+  <!-- QR Code 彈出視窗 -->
+  <div id="qrModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
+      <h3 class="text-2xl font-black text-slate-800">學生掃碼立即加入</h3>
+      <p class="text-xs text-slate-500">免下載、免安裝，相機掃描即可搶答</p>
+      
+      <div id="qrcodeContainer" class="p-4 bg-white border-2 border-indigo-100 rounded-2xl flex items-center justify-center min-h-[200px]"></div>
+
+      <div class="text-3xl font-black text-indigo-600 tracking-widest bg-indigo-50 py-2 rounded-xl">
+        代碼：<span id="qrModalRoomCode">----</span>
+      </div>
+
+      <button onclick="closeQrModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+        關閉視窗
+      </button>
+    </div>
+  </div>
+
+  <!-- 頁尾版權署名（左側放原創圖，右側署名） -->
+  <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
+    <img src="yu_logo.png" alt="Chen Yu" class="w-6 h-6 object-contain inline-block">
+    <span>網站由 CHEN YU 製作</span>
+  </footer>
+
+  <!-- 系統核心邏輯 -->
+  <script>
+    let currentRole = null;
+    let roomCode = '';
+    let userName = '';
+    let isOpen = false;
+    let startTime = 0;
+    let rankedStudents = [];
+    let hasPressed = false;
+    let eventSource = null;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 600, duration = 0.15, type = 'sine') {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function randomRoomCode() {
+      document.getElementById('roomCodeInput').value = Math.floor(1000 + Math.random() * 9000);
+    }
+
+    function joinRoom(role) {
+      const code = document.getElementById('roomCodeInput').value.trim();
+      const name = document.getElementById('userNameInput').value.trim();
+
+      if (!code || code.length < 3) {
+        alert('請輸入 3 或 4 位數字的房間代碼！');
+        return;
+      }
+
+      if (role === 'student' && !name) {
+        alert('請輸入您的暱稱或座號姓名！');
+        return;
+      }
+
+      currentRole = role;
+      roomCode = code;
+      userName = name || '老師';
+
+      document.getElementById('loginView').classList.add('hidden');
+
+      if (role === 'teacher') {
+        document.getElementById('teacherView').classList.remove('hidden');
+        document.getElementById('teacherRoomCode').textContent = roomCode;
+        initPubSub(roomCode);
+      } else {
+        document.getElementById('studentView').classList.remove('hidden');
+        document.getElementById('studentRoomBadge').textContent = roomCode;
+        document.getElementById('studentNameBadge').textContent = userName;
+        initPubSub(roomCode);
+      }
+    }
+
+    function initPubSub(room) {
+      const topic = `chenyu_buzz_${room}`;
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const payload = JSON.parse(data.message);
+          handleMessage(payload);
+        } catch (e) {}
+      };
+
+      eventSource.onerror = () => {
+        document.getElementById('connText').textContent = '重連中...';
+      };
+
+      eventSource.onopen = () => {
+        document.getElementById('connText').textContent = '即時連線中';
+      };
+    }
+
+    function broadcast(payload) {
+      const topic = `chenyu_buzz_${roomCode}`;
+      fetch(`https://ntfy.sh/${topic}`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }).catch(err => console.error(err));
+    }
+
+    function handleMessage(msg) {
+      if (msg.action === 'OPEN_BUZZ') {
+        isOpen = true;
+        startTime = msg.timestamp;
+        hasPressed = false;
+        playBeep(880, 0.2);
+
+        if (currentRole === 'student') {
+          const btn = document.getElementById('mainBuzzBtn');
+          btn.disabled = false;
+          btn.className = "buzz-btn pulse-glow w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-emerald-400 bg-emerald-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden";
+          document.getElementById('btnStatusText').textContent = '立刻搶答！';
+          document.getElementById('studentFeedback').innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
+        }
+      } 
+      else if (msg.action === 'RESET_BUZZ') {
+        isOpen = false;
+        hasPressed = false;
+        rankedStudents = [];
+        updateRankUI();
+
+        if (currentRole === 'student') {
+          const btn = document.getElementById('mainBuzzBtn');
+          btn.disabled = true;
+          btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-not-allowed overflow-hidden";
+          document.getElementById('btnStatusText').textContent = '已鎖定';
+          document.getElementById('studentFeedback').textContent = '等待下一題...';
+        }
+      }
+      else if (msg.action === 'STUDENT_BUZZ') {
+        if (currentRole === 'teacher') {
+          if (!rankedStudents.some(s => s.name === msg.name)) {
+            const diff = ((msg.pressTime - startTime) / 1000).toFixed(3);
+            rankedStudents.push({ name: msg.name, time: diff > 0 ? `+${diff}s` : '0.000s' });
+            playBeep(1200, 0.1);
+            updateRankUI();
+          }
+        }
+      }
+    }
+
+    function toggleBuzzState() {
+      if (!isOpen) {
+        rankedStudents = [];
+        updateRankUI();
+        broadcast({ action: 'OPEN_BUZZ', timestamp: Date.now() });
+        document.getElementById('toggleBuzzBtn').textContent = '🔒 鎖定按鈕';
+        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        isOpen = true;
+      } else {
+        broadcast({ action: 'RESET_BUZZ' });
+        document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
+        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        isOpen = false;
+      }
+    }
+
+    function resetBuzzers() {
+      broadcast({ action: 'RESET_BUZZ' });
+      document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
+      document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+      isOpen = false;
+      rankedStudents = [];
+      updateRankUI();
+    }
+
+    function studentPressBuzz() {
+      if (!isOpen || hasPressed) return;
+      hasPressed = true;
+      playBeep(1000, 0.15);
+
+      const pressTime = Date.now();
+      broadcast({ action: 'STUDENT_BUZZ', name: userName, pressTime: pressTime });
+
+      const btn = document.getElementById('mainBuzzBtn');
+      btn.disabled = true;
+      btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-indigo-300 bg-indigo-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 overflow-hidden";
+      document.getElementById('btnStatusText').textContent = '已送出！';
+      document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已成功搶答！請看黑板大螢幕 🎯</span>';
+    }
+
+    function updateRankUI() {
+      const listContainer = document.getElementById('rankingList');
+      const badge = document.getElementById('buzzCountBadge');
+      badge.textContent = `${rankedStudents.length} 人搶答`;
+
+      if (rankedStudents.length === 0) {
+        document.getElementById('firstPlaceName').textContent = '等待搶答...';
+        document.getElementById('firstPlaceTime').textContent = '--';
+        document.getElementById('rewardBtn').classList.add('hidden');
+        listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
+        return;
+      }
+
+      document.getElementById('firstPlaceName').textContent = rankedStudents[0].name;
+      document.getElementById('firstPlaceTime').textContent = rankedStudents[0].time;
+      document.getElementById('rewardBtn').classList.remove('hidden');
+
+      listContainer.innerHTML = rankedStudents.map((student, idx) => `
+        <div class="flex items-center justify-between p-3.5 rounded-2xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'} text-sm">
+              ${idx + 1}
+            </span>
+            <span class="font-black text-xl text-slate-800">${student.name}</span>
+          </div>
+          <span class="font-bold text-slate-500 text-sm font-mono">${student.time}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearRankList() {
+      rankedStudents = [];
+      updateRankUI();
+    }
+
+    function awardPoint() {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      playBeep(900, 0.3);
+    }
+
+    function openQrModal() {
+      document.getElementById('qrModal').classList.remove('hidden');
+      document.getElementById('qrModalRoomCode').textContent = roomCode;
+
+      const container = document.getElementById('qrcodeContainer');
+      container.innerHTML = '';
+
+      let targetUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+      if (window.location.protocol === 'file:') {
+        targetUrl = `https://chenyu-clc.github.io/buzzer/?room=${roomCode}`;
+      }
+
+      new QRCode(container, {
+        text: targetUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#1e1b4b",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const room = urlParams.get('room');
+      if (room) {
+        document.getElementById('roomCodeInput').value = room;
+      }
+    });
+  </script>
+</body>
+</html>
