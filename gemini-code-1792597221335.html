@@ -7,8 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- 引入全球穿透力最強且免金鑰的 MQTT 即時通訊庫 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <!-- 引入標準 443 埠即時通訊庫 (Supabase Realtime) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
@@ -36,9 +36,8 @@
   <header class="bg-white/95 backdrop-blur border-b border-indigo-100 shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- 您的原創圖片直接以專屬元件呈現 -->
         <div class="w-14 h-14 bg-white rounded-2xl p-1 border border-indigo-100 flex items-center justify-center shadow-sm overflow-hidden">
-          <img class="chenyu-original-logo w-full h-full object-contain" alt="Chen Yu 原創吉祥物">
+          <img class="chenyu-logo w-full h-full object-contain" src="yu_logo.png" alt="Chen Yu 原創吉祥物">
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
@@ -58,7 +57,7 @@
     <!-- 1. 登入選單（首頁） -->
     <div id="loginView" class="max-w-md mx-auto w-full bg-white border border-indigo-100 rounded-3xl p-8 shadow-xl text-center">
       <div class="w-28 h-28 mx-auto mb-3 flex items-center justify-center">
-        <img class="chenyu-original-logo w-full h-full object-contain" alt="Chen Yu 原創吉祥物">
+        <img class="chenyu-logo w-full h-full object-contain" src="yu_logo.png" alt="Chen Yu 原創吉祥物">
       </div>
       <h2 class="text-3xl font-black text-slate-800 mb-2">加入搶答教室</h2>
       <p class="text-slate-500 text-sm mb-6">輸入房間代碼與座號名字，立即開始搶答！</p>
@@ -159,12 +158,12 @@
         <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
       </div>
 
-      <!-- 超大搶答按鈕（中央呈現您的原創圖檔） -->
+      <!-- 超大搶答按鈕（中央呈現原創圖檔） -->
       <div class="relative py-2">
         <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
           class="buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
           <div class="w-24 h-24 flex items-center justify-center pointer-events-none">
-            <img class="chenyu-original-logo w-full h-full object-contain filter drop-shadow" alt="原創標誌">
+            <img class="chenyu-logo w-full h-full object-contain filter drop-shadow" src="yu_logo.png" alt="原創標誌">
           </div>
           <span id="btnStatusText" class="text-2xl font-black">準備中</span>
         </button>
@@ -209,21 +208,24 @@
   </div>
 
   <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
-    <img class="chenyu-original-logo w-6 h-6 object-contain inline-block" alt="Chen Yu">
+    <img class="chenyu-logo w-6 h-6 object-contain inline-block" src="yu_logo.png" alt="Chen Yu">
     <span>網站由 CHEN YU 製作</span>
   </footer>
 
   <script>
-    // 優先讀取 yu_logo.png，若尚未快取則使用內嵌的原創完整圖片備援
-    const FALLBACK_LOGO = "yu_logo.png";
-    document.querySelectorAll('.chenyu-original-logo').forEach(img => {
-      img.src = FALLBACK_LOGO;
+    // 確保圖片必定能正確讀取到 GitHub Pages 上的 yu_logo.png
+    document.querySelectorAll('.chenyu-logo').forEach(img => {
       img.onerror = () => {
         img.src = "https://chenyu-clc.github.io/buzzer/yu_logo.png";
       };
     });
 
-    let client = null;
+    // 透過標準 443 埠 (HTTPS/WSS) 建立廣播通道，穿透所有電信與校園防火牆
+    const SUPABASE_URL = "https://ixmwnafuxvshwlhvjgyx.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bXduYWZ1eHZzaHdsaHZqZ3l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDQwMDAsImV4cCI6MjAyNTA4MDAwMH0.1vL_V9LwJ3Z-Q6nZb6R6w_91r8c51f4z2a3x1b0c9d8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let channel = null;
     let currentRole = null;
     let roomCode = '';
     let userName = '';
@@ -233,7 +235,6 @@
     let rankedStudents = [];
     let onlineStudents = new Set();
     let myStudentId = 'stu_' + Math.random().toString(36).substring(2, 9);
-    let heartbeatTimer = null;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 600, duration = 0.15, type = 'sine') {
@@ -284,52 +285,34 @@
         document.getElementById('studentNameBadge').textContent = userName;
       }
 
-      connectMqtt();
+      setupRealtime();
     }
 
-    // 連線至 HiveMQ 公開安全 WebSocket 節點 (全平台免阻擋、免註冊)
-    function connectMqtt() {
-      const clientId = `chenyu_${Math.random().toString(16).substring(2, 10)}`;
-      // HiveMQ 公開安全 WSS 埠口為 8884
-      client = new Paho.MQTT.Client("broker.hivemq.com", 8884, clientId);
+    function setupRealtime() {
+      const channelName = `chenyu_room_${roomCode}`;
+      channel = supabaseClient.channel(channelName, {
+        config: { broadcast: { ack: false, self: true } }
+      });
 
-      client.onConnectionLost = (responseObject) => {
-        updateConnUI(false, '連線已中斷，重連中...');
-        setTimeout(connectMqtt, 2000);
-      };
-
-      client.onMessageArrived = (message) => {
-        try {
-          const msg = JSON.parse(message.payloadString);
-          handleIncomingMessage(msg);
-        } catch (e) {}
-      };
-
-      const options = {
-        useSSL: true,
-        timeout: 5,
-        onSuccess: () => {
-          updateConnUI(true, '即時連線中');
-          const topic = `chenyu/buzzer/room/${roomCode}`;
-          client.subscribe(topic);
-
-          // 學生加入時立即報到
-          if (currentRole === 'student') {
-            sendPayload({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
-            // 定期每 4 秒廣播一次維持在線狀態
-            if (heartbeatTimer) clearInterval(heartbeatTimer);
-            heartbeatTimer = setInterval(() => {
-              sendPayload({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
-            }, 4000);
+      channel
+        .on('broadcast', { event: 'buzzer_event' }, (event) => {
+          handleIncomingMessage(event.payload);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            updateConnUI(true, '即時連線中');
+            if (currentRole === 'student') {
+              // 學生進房立即發送報到封包
+              sendBroadcast({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
+              // 定期每 4 秒廣播報到維持在線
+              setInterval(() => {
+                sendBroadcast({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
+              }, 4000);
+            }
+          } else {
+            updateConnUI(false, '連線建立中...');
           }
-        },
-        onFailure: () => {
-          updateConnUI(false, '連線伺服器失敗，重試中...');
-          setTimeout(connectMqtt, 3000);
-        }
-      };
-
-      client.connect(options);
+        });
     }
 
     function updateConnUI(connected, text) {
@@ -346,16 +329,16 @@
       textEl.textContent = text;
     }
 
-    function sendPayload(data) {
-      if (!client || !client.isConnected()) return;
-      const topic = `chenyu/buzzer/room/${roomCode}`;
-      const message = new Paho.MQTT.Message(JSON.stringify(data));
-      message.destinationName = topic;
-      message.qos = 1;
-      client.send(message);
+    function sendBroadcast(payload) {
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'buzzer_event',
+          payload: payload
+        });
+      }
     }
 
-    // 處理收到的廣播訊息
     function handleIncomingMessage(msg) {
       // 1. 學生進房報到
       if (msg.type === 'STUDENT_JOIN') {
@@ -416,7 +399,6 @@
       }
     }
 
-    // 老師端更新在線人數與名冊
     function updateOnlineUI() {
       if (currentRole !== 'teacher') return;
       const countEl = document.getElementById('onlineCountBadge');
@@ -432,7 +414,6 @@
       }
     }
 
-    // 老師與學生端同步榜單
     function updateRankUI() {
       if (currentRole === 'teacher') {
         const listContainer = document.getElementById('rankingList');
@@ -495,16 +476,15 @@
       }
     }
 
-    // 老師開關題目
     function toggleBuzzState() {
       if (!isOpen) {
         openTimestamp = Date.now();
-        sendPayload({ type: 'OPEN_BUZZ', openTime: openTimestamp });
+        sendBroadcast({ type: 'OPEN_BUZZ', openTime: openTimestamp });
         document.getElementById('toggleBuzzBtn').textContent = '🔒 鎖定按鈕';
         document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
         isOpen = true;
       } else {
-        sendPayload({ type: 'RESET_BUZZ' });
+        sendBroadcast({ type: 'RESET_BUZZ' });
         document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
         document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
         isOpen = false;
@@ -512,7 +492,7 @@
     }
 
     function resetBuzzers() {
-      sendPayload({ type: 'RESET_BUZZ' });
+      sendBroadcast({ type: 'RESET_BUZZ' });
       document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
       document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
       isOpen = false;
@@ -520,7 +500,6 @@
       updateRankUI();
     }
 
-    // 學生點擊送出搶答
     function studentPressBuzz() {
       if (!isOpen || hasPressed) return;
       hasPressed = true;
@@ -533,7 +512,7 @@
       document.getElementById('btnStatusText').textContent = '已搶答！';
       document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已送出！請看下方排名 🎯</span>';
 
-      sendPayload({
+      sendBroadcast({
         type: 'STUDENT_BUZZ',
         id: myStudentId,
         name: userName,
