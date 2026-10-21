@@ -41,7 +41,7 @@
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
-          <p class="text-xs text-indigo-600 font-bold tracking-wider">共用資料庫同步・全班一起搶答</p>
+          <p class="text-xs text-indigo-600 font-bold tracking-wider">共用資料庫同步・重置不需重新進房</p>
         </div>
       </div>
       <div id="connectionStatus" class="flex items-center gap-2 text-sm font-bold bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-full border border-amber-200">
@@ -235,6 +235,25 @@ let role = '', roomCode = '', userName = '', teacherToken = null;
 let roomState = null, connected = false, busy = false, polling = false, lastSuccess = 0;
 let lastError = '無', lastAction = '尚無', pollHandle = null, lastRevision = -1;
 let errorNotified = false, buzzPending = false, studentId;
+// 手機重新整理或系統回收頁面後，保留該學生的房間與姓名；重置題目不清除登入。
+const STUDENT_SESSION_KEY = 'chenyu_buzzer_student_session_v5';
+let restoringSession = false;
+function readStudentSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY) || 'null');
+    if (!saved || !/^\d{4}$/.test(saved.code) || !saved.name || saved.name.length>40 || !saved.id) return null;
+    return saved;
+  } catch (_) { return null; }
+}
+function saveStudentSession() {
+  if (role !== 'student') return;
+  try { localStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify({code:roomCode,name:userName,id:studentId})); }
+  catch (_) { /* 無痕模式可能不允許永久儲存；當次操作仍然有效 */ }
+}
+function clearStudentSession() {
+  try { localStorage.removeItem(STUDENT_SESSION_KEY); } catch (_) {}
+}
+
 try { studentId = sessionStorage.getItem('chenyu_buzzer_student_v4') || crypto.randomUUID(); sessionStorage.setItem('chenyu_buzzer_student_v4',studentId); }
 catch (_) { studentId = crypto.randomUUID(); }
 function el(id) { return document.getElementById(id); }
@@ -257,7 +276,7 @@ function setConnection(ok) {
   if (role==='teacher') el('toggleBuzzBtn').disabled = busy || !ok;
 }
 function diagnostics() { return [
-  '版本：共用資料庫版 v4', '網站：'+location.href,
+  '版本：共用資料庫版 v5（保留進房）', '網站：'+location.href,
   '專案：'+SUPABASE_URL, '房間：'+(roomCode||'未加入'), '身分：'+(role||'未加入'),
   '資料庫同步：'+(connected?'成功':'未成功'),
   '老師在線：'+(roomState?.teacher_online?'是':'否／未偵測'),
@@ -286,7 +305,7 @@ async function rpc(name,args) {
   return data;
 }
 function replaceText(id,value) { if (el(id)) el(id).textContent=value; }
-async function joinRoom(wantedRole) {
+async function joinRoom(wantedRole, isRestore = false) {
   if (role || busy) return;
   const code=el('roomCodeInput').value.trim();
   const name=el('userNameInput').value.trim();
@@ -300,16 +319,21 @@ async function joinRoom(wantedRole) {
       p_name:wantedRole==='student'?name:null,p_teacher_token:token
     });
     role=wantedRole; roomCode=code; userName=name||'老師';teacherToken=token;
+    if (role==='student') saveStudentSession();
+    else clearStudentSession();
     el('loginView').classList.add('hidden');
     el(wantedRole==='teacher'?'teacherView':'studentView').classList.remove('hidden');
     replaceText('teacherRoomCode',code);replaceText('studentRoomBadge',code);replaceText('studentNameBadge',name);
     applyState(data);
-    lastSuccess=Date.now();lastAction='加入房間成功';lastError='無';setConnection(true);
+    lastSuccess=Date.now();lastAction=isRestore?'已自動恢復學生房間':'加入房間成功';lastError='無';setConnection(true);
     // 每 1.5 秒從同一個資料庫讀取，網路重連也會恢復；不用靠廣播收發。
     pollHandle=setInterval(pollState,1500);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollState();});
   } catch (e) {
-    lastError=displayError(e);alert('無法進房：'+lastError);renderDiagnostics();
+    lastError=displayError(e);
+    // 連線短暫中斷不清除學生身分，下次重新開啟仍會嘗試恢復。
+    if (!isRestore) alert('無法進房：'+lastError);
+    renderDiagnostics();
   } finally {busy=false; if(role==='teacher') renderTeacherToggle(); }
 }
 function applyState(data) {
@@ -319,7 +343,7 @@ function applyState(data) {
   const wasOpen=roomState?.opened;
   const wasRound=roomState?.round;
   roomState=data;
-  if (wasRound!==data.round) buzzPending=false;
+  if (wasRound!==data.round) buzzPending=false; // 換題只解除這題的按鈕鎖定，學生仍留在原房間
   if (role==='student' && wasOpen===false && data.opened && data.round!==wasRound) playBeep();
   renderTeacherToggle();renderOnline();renderRanking();renderStudentButton();renderDiagnostics();
 }
@@ -386,19 +410,19 @@ function renderStudentButton(){
   const btn=el('mainBuzzBtn');btn.disabled=!ready;
   btn.className=`buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 overflow-hidden ${ready?'pulse-glow border-emerald-400 bg-emerald-500 text-white cursor-pointer':answered||buzzPending?'border-indigo-300 bg-indigo-500 text-white':'border-slate-200 bg-slate-200 text-slate-500 cursor-not-allowed'}`;
   replaceText('btnStatusText',!connected?'連線中':answered?'已搶答！':buzzPending?'送出中':ready?'立刻搶答！':'等待開放');
-  replaceText('studentFeedback',!connected?'無法同步，請查看下方連線診斷':!roomState?.teacher_online?'等待老師上線…':answered?'已列入全班排行榜':buzzPending?'正在送出搶答…':ready?'🔥 老師已開放，快按！':'等待老師開放題目…');
+  replaceText('studentFeedback',!connected?'連線暫時中斷，將自動重試；不用重新進房':!roomState?.teacher_online?'等待老師上線…':answered?'已列入全班排行榜':buzzPending?'正在送出搶答…':ready?'🔥 老師已開放，快按！':'留在教室等待下一題，不用重新登入');
 }
 async function teacherAction(action) {
   if (role!=='teacher'||busy||!connected)return;
   busy=true;renderTeacherToggle();
   try {
     const data=await rpc('chenyu_buzzer_control',{p_code:roomCode,p_teacher_token:teacherToken,p_action:action});
-    lastAction='老師操作：'+action;lastError='無';lastSuccess=Date.now();applyState(data);
+    lastAction=action==='reset'?'已重置本題，學生仍留在房間':'老師操作：'+action;lastError='無';lastSuccess=Date.now();applyState(data);
   }catch(e){lastError=displayError(e);alert('操作失敗：'+lastError);}
   finally{busy=false;renderTeacherToggle();renderDiagnostics();}
 }
 function toggleBuzzState(){teacherAction(roomState?.opened?'close':'open');}
-function resetBuzzers(){teacherAction('reset');}
+function resetBuzzers(){teacherAction('reset');} // 不移除學生、不返回首頁
 async function studentPressBuzz(){
   if(role!=='student'||!connected||busy||buzzPending||!roomState?.opened||!roomState?.teacher_online)return;
   if(roomState?.ranking?.some(s=>s.id===studentId))return;
@@ -423,10 +447,27 @@ function openQrModal(){
   else target.textContent=url.href;
 }
 function closeQrModal(){el('qrModal').classList.add('hidden');}
-window.addEventListener('DOMContentLoaded',()=>{
-  const room=new URLSearchParams(location.search).get('room');if(/^\d{4}$/.test(room||'')) el('roomCodeInput').value=room;
-  if(!db)lastError='Supabase 套件未載入';
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const room=new URLSearchParams(location.search).get('room');
+  const scannedRoom = /^\d{4}$/.test(room||'') ? room : null;
+  if (scannedRoom) el('roomCodeInput').value=scannedRoom;
+  if(!db) lastError='Supabase 套件未載入';
   renderDiagnostics();
+  const saved = readStudentSession();
+  // 若 QR Code 指向其他房間，不強迫回到舊房；學生可正常輸入新姓名加入。
+  if (!saved || (scannedRoom && scannedRoom !== saved.code)) return;
+  if (saved.id !== studentId) {
+    studentId = saved.id;
+    try { sessionStorage.setItem('chenyu_buzzer_student_v4', studentId); } catch (_) {}
+  }
+  el('roomCodeInput').value=saved.code;
+  el('userNameInput').value=saved.name;
+  restoringSession=true;
+  lastAction='嘗試自動恢復上次加入的學生房間';
+  renderDiagnostics();
+  await joinRoom('student', true);
+  restoringSession=false;
+  // 恢復失敗時顯示原本的登入畫面與詳細診斷，學生可自行再次點進房。
 });
   </script>
 </body>
