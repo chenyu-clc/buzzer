@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- 引入標準 443 埠即時通訊庫 (Supabase Realtime) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
@@ -21,12 +19,12 @@
       transform: scale(0.95);
     }
     .pulse-glow {
-      box-shadow: 0 0 35px rgba(34, 197, 94, 0.6);
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.7);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); }
-      50% { transform: scale(1.03); box-shadow: 0 0 45px rgba(34, 197, 94, 0.85); }
+      50% { transform: scale(1.04); box-shadow: 0 0 45px rgba(34, 197, 94, 0.9); }
     }
   </style>
 </head>
@@ -36,8 +34,9 @@
   <header class="bg-white/95 backdrop-blur border-b border-indigo-100 shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
+        <!-- 僅載入您原創的 yu_logo.png -->
         <div class="w-14 h-14 bg-white rounded-2xl p-1 border border-indigo-100 flex items-center justify-center shadow-sm overflow-hidden">
-          <img class="chenyu-logo w-full h-full object-contain" src="yu_logo.png" alt="Chen Yu 原創吉祥物">
+          <img src="yu_logo.png" alt="Chen Yu 吉祥物" class="w-full h-full object-contain">
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">課堂搶答系統</h1>
@@ -57,7 +56,7 @@
     <!-- 1. 登入選單（首頁） -->
     <div id="loginView" class="max-w-md mx-auto w-full bg-white border border-indigo-100 rounded-3xl p-8 shadow-xl text-center">
       <div class="w-28 h-28 mx-auto mb-3 flex items-center justify-center">
-        <img class="chenyu-logo w-full h-full object-contain" src="yu_logo.png" alt="Chen Yu 原創吉祥物">
+        <img src="yu_logo.png" alt="Chen Yu 吉祥物" class="w-full h-full object-contain">
       </div>
       <h2 class="text-3xl font-black text-slate-800 mb-2">加入搶答教室</h2>
       <p class="text-slate-500 text-sm mb-6">輸入房間代碼與座號名字，立即開始搶答！</p>
@@ -112,7 +111,7 @@
         </div>
       </div>
 
-      <!-- 在線學生名單狀態列 -->
+      <!-- 在線學生狀態列（心跳點名） -->
       <div class="bg-white rounded-2xl p-4 border border-indigo-100 shadow-sm flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
           <span class="text-sm font-black text-slate-700">👥 已進房學生：</span>
@@ -158,12 +157,12 @@
         <span class="text-slate-500 font-bold">學生：<span id="studentNameBadge" class="text-slate-800 font-black text-xl">--</span></span>
       </div>
 
-      <!-- 超大搶答按鈕（中央呈現原創圖檔） -->
+      <!-- 超大搶答按鈕（中央呈現您的原創圖檔） -->
       <div class="relative py-2">
         <button id="mainBuzzBtn" onclick="studentPressBuzz()" disabled
           class="buzz-btn w-64 h-64 md:w-72 md:h-72 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-3xl shadow-2xl flex flex-col items-center justify-center gap-2 transition duration-200 cursor-not-allowed overflow-hidden">
           <div class="w-24 h-24 flex items-center justify-center pointer-events-none">
-            <img class="chenyu-logo w-full h-full object-contain filter drop-shadow" src="yu_logo.png" alt="原創標誌">
+            <img src="yu_logo.png" alt="Chen Yu 吉祥物" class="w-full h-full object-contain filter drop-shadow">
           </div>
           <span id="btnStatusText" class="text-2xl font-black">準備中</span>
         </button>
@@ -208,24 +207,11 @@
   </div>
 
   <footer class="py-4 text-center border-t border-indigo-50 bg-white/60 backdrop-blur text-sm text-slate-500 font-bold flex items-center justify-center gap-2">
-    <img class="chenyu-logo w-6 h-6 object-contain inline-block" src="yu_logo.png" alt="Chen Yu">
+    <img src="yu_logo.png" alt="Chen Yu" class="w-6 h-6 object-contain inline-block">
     <span>網站由 CHEN YU 製作</span>
   </footer>
 
   <script>
-    // 確保圖片必定能正確讀取到 GitHub Pages 上的 yu_logo.png
-    document.querySelectorAll('.chenyu-logo').forEach(img => {
-      img.onerror = () => {
-        img.src = "https://chenyu-clc.github.io/buzzer/yu_logo.png";
-      };
-    });
-
-    // 透過標準 443 埠 (HTTPS/WSS) 建立廣播通道，穿透所有電信與校園防火牆
-    const SUPABASE_URL = "https://ixmwnafuxvshwlhvjgyx.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bXduYWZ1eHZzaHdsaHZqZ3l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDQwMDAsImV4cCI6MjAyNTA4MDAwMH0.1vL_V9LwJ3Z-Q6nZb6R6w_91r8c51f4z2a3x1b0c9d8";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    let channel = null;
     let currentRole = null;
     let roomCode = '';
     let userName = '';
@@ -233,8 +219,10 @@
     let openTimestamp = 0;
     let hasPressed = false;
     let rankedStudents = [];
-    let onlineStudents = new Set();
+    let onlineStudentsMap = new Map(); // id -> { name, time }
     let myStudentId = 'stu_' + Math.random().toString(36).substring(2, 9);
+    let eventSource = null;
+    let heartbeatTimer = null;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 600, duration = 0.15, type = 'sine') {
@@ -285,34 +273,43 @@
         document.getElementById('studentNameBadge').textContent = userName;
       }
 
-      setupRealtime();
+      initChannel();
     }
 
-    function setupRealtime() {
-      const channelName = `chenyu_room_${roomCode}`;
-      channel = supabaseClient.channel(channelName, {
-        config: { broadcast: { ack: false, self: true } }
-      });
+    // 建立廣播通道（走標準 443 埠，100% 穿透）
+    function initChannel() {
+      const cleanCode = roomCode.replace(/[^a-zA-Z0-9]/g, '');
+      const topic = `chenyu_quiz_${cleanCode}`;
 
-      channel
-        .on('broadcast', { event: 'buzzer_event' }, (event) => {
-          handleIncomingMessage(event.payload);
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            updateConnUI(true, '即時連線中');
-            if (currentRole === 'student') {
-              // 學生進房立即發送報到封包
-              sendBroadcast({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
-              // 定期每 4 秒廣播報到維持在線
-              setInterval(() => {
-                sendBroadcast({ type: 'STUDENT_JOIN', id: myStudentId, name: userName });
-              }, 4000);
-            }
-          } else {
-            updateConnUI(false, '連線建立中...');
+      if (eventSource) eventSource.close();
+      // 使用 since=now 避免接收過去歷史封包
+      eventSource = new EventSource(`https://ntfy.sh/${topic}/sse?since=now`);
+
+      eventSource.onopen = () => {
+        updateConnUI(true, '即時連線中');
+        // 學生每 3 秒自動報到一次（心跳）
+        if (currentRole === 'student') {
+          sendBroadcast({ type: 'HEARTBEAT', id: myStudentId, name: userName });
+          if (heartbeatTimer) clearInterval(heartbeatTimer);
+          heartbeatTimer = setInterval(() => {
+            sendBroadcast({ type: 'HEARTBEAT', id: myStudentId, name: userName });
+          }, 3000);
+        }
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const raw = JSON.parse(event.data);
+          if (raw.event === 'message') {
+            const payload = JSON.parse(raw.message);
+            handleIncoming(payload);
           }
-        });
+        } catch (e) {}
+      };
+
+      eventSource.onerror = () => {
+        updateConnUI(false, '連線異常，自動重連中...');
+      };
     }
 
     function updateConnUI(connected, text) {
@@ -329,26 +326,26 @@
       textEl.textContent = text;
     }
 
+    // 發送廣播封包
     function sendBroadcast(payload) {
-      if (channel) {
-        channel.send({
-          type: 'broadcast',
-          event: 'buzzer_event',
-          payload: payload
-        });
-      }
+      const cleanCode = roomCode.replace(/[^a-zA-Z0-9]/g, '');
+      const topic = `chenyu_quiz_${cleanCode}`;
+      fetch(`https://ntfy.sh/${topic}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.error("傳送異常:", err));
     }
 
-    function handleIncomingMessage(msg) {
-      // 1. 學生進房報到
-      if (msg.type === 'STUDENT_JOIN') {
-        if (!onlineStudents.has(msg.name)) {
-          onlineStudents.add(msg.name);
-          updateOnlineUI();
-        }
+    // 處理收到的訊息
+    function handleIncoming(msg) {
+      // 1. 學生在線報到（老師端即時更新名冊）
+      if (msg.type === 'HEARTBEAT') {
+        onlineStudentsMap.set(msg.id, { name: msg.name, time: Date.now() });
+        updateOnlineUI();
       }
 
-      // 2. 老師開放搶答
+      // 2. 老師開放題目
       else if (msg.type === 'OPEN_BUZZ') {
         isOpen = true;
         openTimestamp = msg.openTime;
@@ -384,37 +381,49 @@
         }
       }
 
-      // 4. 收到學生搶答
+      // 4. 收到學生搶答（雙方同步追加與排序）
       else if (msg.type === 'STUDENT_BUZZ') {
         if (!rankedStudents.some(s => s.id === msg.id)) {
           const diff = ((msg.pressTime - openTimestamp) / 1000).toFixed(3);
           rankedStudents.push({
             id: msg.id,
             name: msg.name,
+            pressTime: msg.pressTime,
             diff: diff > 0 ? `+${diff}s` : '0.000s'
           });
+          // 依時間精準排序
+          rankedStudents.sort((a, b) => a.pressTime - b.pressTime);
           playBeep(1200, 0.1);
           updateRankUI();
         }
       }
     }
 
+    // 老師端更新在線人數
     function updateOnlineUI() {
       if (currentRole !== 'teacher') return;
+      const now = Date.now();
+      // 清除超過 10 秒未心跳的離線學生
+      for (let [id, data] of onlineStudentsMap.entries()) {
+        if (now - data.time > 10000) onlineStudentsMap.delete(id);
+      }
+
       const countEl = document.getElementById('onlineCountBadge');
       const namesEl = document.getElementById('onlineListNames');
-      countEl.textContent = `${onlineStudents.size} 人`;
+      countEl.textContent = `${onlineStudentsMap.size} 人`;
 
-      if (onlineStudents.size === 0) {
+      if (onlineStudentsMap.size === 0) {
         namesEl.textContent = '等待學生加入中...';
       } else {
-        namesEl.innerHTML = Array.from(onlineStudents).map(name => 
-          `<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-lg font-bold">${name}</span>`
+        namesEl.innerHTML = Array.from(onlineStudentsMap.values()).map(s => 
+          `<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-0.5 rounded-lg font-bold">${s.name}</span>`
         ).join(' ');
       }
     }
 
+    // 雙方同步榜單
     function updateRankUI() {
+      // 老師端
       if (currentRole === 'teacher') {
         const listContainer = document.getElementById('rankingList');
         const badge = document.getElementById('buzzCountBadge');
@@ -446,6 +455,7 @@
         `).join('');
       }
 
+      // 學生端
       if (currentRole === 'student') {
         const studentListContainer = document.getElementById('studentRankingList');
         const studentBadge = document.getElementById('studentBuzzCountBadge');
@@ -476,6 +486,7 @@
       }
     }
 
+    // 老師開關
     function toggleBuzzState() {
       if (!isOpen) {
         openTimestamp = Date.now();
@@ -500,6 +511,7 @@
       updateRankUI();
     }
 
+    // 學生送出搶答
     function studentPressBuzz() {
       if (!isOpen || hasPressed) return;
       hasPressed = true;
