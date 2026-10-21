@@ -7,9 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- 引入即時雲端同步引擎 -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <!-- 引入全瀏覽器通用、免金鑰的即時通訊引擎 (MQTT over WebSocket) -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
@@ -187,22 +186,14 @@
   </footer>
 
   <script>
-    // 即時雲端資料庫設定
-    const firebaseConfig = {
-      databaseURL: "https://chenyu-buzzer-default-rtdb.firebaseio.com"
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database();
-
     let currentRole = null;
     let roomCode = '';
     let userName = '';
-    let currentRoomRef = null;
-    let isBuzzOpen = false;
+    let isOpen = false;
     let openTimestamp = 0;
+    let rankedStudents = [];
     let hasPressed = false;
+    let mqttClient = null;
 
     // 音效產生
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -225,6 +216,7 @@
       document.getElementById('roomCodeInput').value = Math.floor(1000 + Math.random() * 9000);
     }
 
+    // 登入進入房間
     function joinRoom(role) {
       const code = document.getElementById('roomCodeInput').value.trim();
       const name = document.getElementById('userNameInput').value.trim();
@@ -244,159 +236,154 @@
       userName = name || '老師';
 
       document.getElementById('loginView').classList.add('hidden');
-      currentRoomRef = db.ref(`rooms/${roomCode}`);
-
-      // 監聽連線狀態
-      db.ref('.info/connected').on('value', (snap) => {
-        const statusEl = document.getElementById('connectionStatus');
-        const textEl = document.getElementById('connText');
-        const dotEl = document.getElementById('connDot');
-        if (snap.val() === true) {
-          statusEl.className = "flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200";
-          dotEl.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-          textEl.textContent = '即時連線中';
-        } else {
-          statusEl.className = "flex items-center gap-2 text-sm font-bold bg-rose-50 text-rose-700 px-3 py-1.5 rounded-full border border-rose-200";
-          dotEl.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
-          textEl.textContent = '連線中斷';
-        }
-      });
 
       if (role === 'teacher') {
         document.getElementById('teacherView').classList.remove('hidden');
         document.getElementById('teacherRoomCode').textContent = roomCode;
-        initTeacherListener();
       } else {
         document.getElementById('studentView').classList.remove('hidden');
         document.getElementById('studentRoomBadge').textContent = roomCode;
         document.getElementById('studentNameBadge').textContent = userName;
-        initStudentListener();
       }
+
+      connectMqtt();
     }
 
-    // 老師端監聽
-    function initTeacherListener() {
-      // 監聽題目狀態
-      currentRoomRef.child('status').on('value', (snap) => {
-        const val = snap.val() || { isOpen: false };
-        isBuzzOpen = val.isOpen;
-        openTimestamp = val.openTimestamp || 0;
+    // 連線至公開高可用 MQTT WebSocket 伺服器 (全球通用、免申請金鑰)
+    function connectMqtt() {
+      const topic = `chenyu/buzz/${roomCode}`;
+      const clientId = `user_${Math.random().toString(16).substring(2, 10)}`;
 
-        const toggleBtn = document.getElementById('toggleBuzzBtn');
-        if (isBuzzOpen) {
-          toggleBtn.textContent = '🔒 鎖定按鈕';
-          toggleBtn.className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
-        } else {
-          toggleBtn.textContent = '📢 開放搶答！';
-          toggleBtn.className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
-        }
+      // 使用 EMQX 免費高可用 WebSocket 節點
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: clientId,
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 2000
       });
 
-      // 監聽搶答名單（依伺服器時間排序）
-      currentRoomRef.child('buzzes').orderByChild('pressTime').on('value', (snap) => {
-        const listContainer = document.getElementById('rankingList');
-        const badge = document.getElementById('buzzCountBadge');
-        const buzzes = [];
-        snap.forEach(child => {
-          buzzes.push(child.val());
-        });
+      mqttClient.on('connect', () => {
+        const statusEl = document.getElementById('connectionStatus');
+        const textEl = document.getElementById('connText');
+        const dotEl = document.getElementById('connDot');
+        statusEl.className = "flex items-center gap-2 text-sm font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200";
+        dotEl.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+        textEl.textContent = '即時連線中';
 
-        badge.textContent = `${buzzes.length} 人搶答`;
+        mqttClient.subscribe(topic, { qos: 1 });
+      });
 
-        if (buzzes.length === 0) {
-          document.getElementById('firstPlaceName').textContent = '等待搶答...';
-          document.getElementById('firstPlaceTime').textContent = '--';
-          document.getElementById('rewardBtn').classList.add('hidden');
-          listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
-          return;
-        }
+      mqttClient.on('message', (t, message) => {
+        try {
+          const payload = JSON.parse(message.toString());
+          handleMessage(payload);
+        } catch (e) {}
+      });
 
-        // 第一名特寫
-        const first = buzzes[0];
-        document.getElementById('firstPlaceName').textContent = first.name;
-        const firstDiff = ((first.pressTime - openTimestamp) / 1000).toFixed(3);
-        document.getElementById('firstPlaceTime').textContent = firstDiff > 0 ? `+${firstDiff}s` : '最速按下';
-        document.getElementById('rewardBtn').classList.remove('hidden');
+      mqttClient.on('offline', () => {
+        setOfflineState();
+      });
 
-        // 渲染榜單
-        listContainer.innerHTML = buzzes.map((s, idx) => {
-          const diff = ((s.pressTime - openTimestamp) / 1000).toFixed(3);
-          const timeStr = diff > 0 ? `+${diff}s` : '0.000s';
-          return `
-            <div class="flex items-center justify-between p-3.5 rounded-2xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}">
-              <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'} text-sm">
-                  ${idx + 1}
-                </span>
-                <span class="font-black text-xl text-slate-800">${s.name}</span>
-              </div>
-              <span class="font-bold text-slate-500 text-sm font-mono">${timeStr}</span>
-            </div>
-          `;
-        }).join('');
+      mqttClient.on('error', () => {
+        setOfflineState();
       });
     }
 
-    // 學生端監聽
-    function initStudentListener() {
-      currentRoomRef.child('status').on('value', (snap) => {
-        const val = snap.val() || { isOpen: false };
-        isBuzzOpen = val.isOpen;
-        openTimestamp = val.openTimestamp || 0;
+    function setOfflineState() {
+      const statusEl = document.getElementById('connectionStatus');
+      const textEl = document.getElementById('connText');
+      const dotEl = document.getElementById('connDot');
+      statusEl.className = "flex items-center gap-2 text-sm font-bold bg-rose-50 text-rose-700 px-3 py-1.5 rounded-full border border-rose-200";
+      dotEl.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+      textEl.textContent = '重連中...';
+    }
 
-        const btn = document.getElementById('mainBuzzBtn');
-        const feedback = document.getElementById('studentFeedback');
+    function sendMqtt(data) {
+      if (!mqttClient || !mqttClient.connected) return;
+      const topic = `chenyu/buzz/${roomCode}`;
+      mqttClient.publish(topic, JSON.stringify(data), { qos: 1 });
+    }
 
-        if (isBuzzOpen) {
-          hasPressed = false;
+    // 處理同步訊息
+    function handleMessage(msg) {
+      if (msg.action === 'OPEN_BUZZ') {
+        isOpen = true;
+        openTimestamp = msg.openTime;
+        hasPressed = false;
+        playBeep(880, 0.2);
+
+        if (currentRole === 'student') {
+          const btn = document.getElementById('mainBuzzBtn');
           btn.disabled = false;
           btn.className = "buzz-btn pulse-glow w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-emerald-400 bg-emerald-500 text-white font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden";
           document.getElementById('btnStatusText').textContent = '立刻搶答！';
-          feedback.innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
-          playBeep(880, 0.2);
-        } else {
+          document.getElementById('studentFeedback').innerHTML = '<span class="text-emerald-600 animate-bounce">🔥 老師已開放！快按！</span>';
+        }
+      } 
+      else if (msg.action === 'RESET_BUZZ') {
+        isOpen = false;
+        hasPressed = false;
+        rankedStudents = [];
+        updateRankUI();
+
+        if (currentRole === 'student') {
+          const btn = document.getElementById('mainBuzzBtn');
           btn.disabled = true;
           btn.className = "buzz-btn w-72 h-72 md:w-80 md:h-80 rounded-full border-8 border-slate-200 bg-slate-200 text-slate-400 font-black text-4xl shadow-2xl flex flex-col items-center justify-center gap-2 cursor-not-allowed overflow-hidden";
           document.getElementById('btnStatusText').textContent = '已鎖定';
-          feedback.textContent = '等待下一題...';
+          document.getElementById('studentFeedback').textContent = '等待下一題...';
         }
-      });
+      }
+      else if (msg.action === 'STUDENT_BUZZ') {
+        if (currentRole === 'teacher') {
+          if (!rankedStudents.some(s => s.name === msg.name)) {
+            const diff = ((msg.pressTime - openTimestamp) / 1000).toFixed(3);
+            rankedStudents.push({ 
+              name: msg.name, 
+              time: diff > 0 ? `+${diff}s` : '0.000s' 
+            });
+            playBeep(1200, 0.1);
+            updateRankUI();
+          }
+        }
+      }
     }
 
-    // 老師開關狀態
+    // 老師操作
     function toggleBuzzState() {
-      if (!isBuzzOpen) {
-        currentRoomRef.child('buzzes').remove();
-        currentRoomRef.child('status').set({
-          isOpen: true,
-          openTimestamp: Date.now()
-        });
+      if (!isOpen) {
+        rankedStudents = [];
+        updateRankUI();
+        openTimestamp = Date.now();
+        sendMqtt({ action: 'OPEN_BUZZ', openTime: openTimestamp });
+        document.getElementById('toggleBuzzBtn').textContent = '🔒 鎖定按鈕';
+        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        isOpen = true;
       } else {
-        currentRoomRef.child('status').update({
-          isOpen: false
-        });
+        sendMqtt({ action: 'RESET_BUZZ' });
+        document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
+        document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+        isOpen = false;
       }
     }
 
     function resetBuzzers() {
-      currentRoomRef.child('buzzes').remove();
-      currentRoomRef.child('status').set({
-        isOpen: false,
-        openTimestamp: 0
-      });
+      sendMqtt({ action: 'RESET_BUZZ' });
+      document.getElementById('toggleBuzzBtn').textContent = '📢 開放搶答！';
+      document.getElementById('toggleBuzzBtn').className = "px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-2xl shadow-lg transition";
+      isOpen = false;
+      rankedStudents = [];
+      updateRankUI();
     }
 
-    // 學生點擊送出
+    // 學生操作
     function studentPressBuzz() {
-      if (!isBuzzOpen || hasPressed) return;
+      if (!isOpen || hasPressed) return;
       hasPressed = true;
       playBeep(1000, 0.15);
 
       const pressTime = Date.now();
-      currentRoomRef.child('buzzes').push({
-        name: userName,
-        pressTime: pressTime
-      });
+      sendMqtt({ action: 'STUDENT_BUZZ', name: userName, pressTime: pressTime });
 
       const btn = document.getElementById('mainBuzzBtn');
       btn.disabled = true;
@@ -405,10 +392,39 @@
       document.getElementById('studentFeedback').innerHTML = '<span class="text-indigo-600">已成功搶答！請看黑板大螢幕 🎯</span>';
     }
 
-    function clearRankList() {
-      if (currentRoomRef) {
-        currentRoomRef.child('buzzes').remove();
+    function updateRankUI() {
+      const listContainer = document.getElementById('rankingList');
+      const badge = document.getElementById('buzzCountBadge');
+      badge.textContent = `${rankedStudents.length} 人搶答`;
+
+      if (rankedStudents.length === 0) {
+        document.getElementById('firstPlaceName').textContent = '等待搶答...';
+        document.getElementById('firstPlaceTime').textContent = '--';
+        document.getElementById('rewardBtn').classList.add('hidden');
+        listContainer.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold">按下方「開放搶答」讓學生開始按鈕！</div>';
+        return;
       }
+
+      document.getElementById('firstPlaceName').textContent = rankedStudents[0].name;
+      document.getElementById('firstPlaceTime').textContent = rankedStudents[0].time;
+      document.getElementById('rewardBtn').classList.remove('hidden');
+
+      listContainer.innerHTML = rankedStudents.map((s, idx) => `
+        <div class="flex items-center justify-between p-3.5 rounded-2xl border ${idx === 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'} text-sm">
+              ${idx + 1}
+            </span>
+            <span class="font-black text-xl text-slate-800">${s.name}</span>
+          </div>
+          <span class="font-bold text-slate-500 text-sm font-mono">${s.time}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearRankList() {
+      rankedStudents = [];
+      updateRankUI();
     }
 
     function awardPoint() {
