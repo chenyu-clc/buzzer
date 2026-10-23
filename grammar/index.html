@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#f5f2eb"><meta name="description" content="B3L5 短文語法練習：20 題 TOCFL 風格文法挑戰。">
+<title>浣熊語法研究室｜B3L5 短文語法練習</title>
+<style>
+:root{--paper:#f5f2eb;--card:#fffdf9;--ink:#25372f;--muted:#77827a;--green:#38584a;--mint:#e8eee7;--line:#e7e5dc;--rose:#bf766c;--gold:#c99e5b;--shadow:0 18px 65px rgba(39,57,42,.075)}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #a2bca6;outline-offset:3px}.hidden{display:none!important}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.42;background:radial-gradient(circle at 8% 14%,#fff 0,transparent 36%),radial-gradient(circle at 92% 90%,#e6eadd 0,transparent 39%)}
+header{position:relative;z-index:1;background:rgba(255,253,249,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.topbar{max-width:1180px;margin:auto;padding:17px 27px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{display:flex;align-items:center;gap:13px;min-width:0}.mark{width:53px;height:53px;flex:0 0 auto}.brand-title{font-size:18px;font-weight:800;letter-spacing:.05em;white-space:nowrap}.brand-sub{font-size:11px;letter-spacing:.13em;color:var(--muted);margin-top:4px}.statrow{display:flex;align-items:center;gap:9px}.stat{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:9px 13px;border-radius:12px;min-width:70px;justify-content:center;font-weight:700;box-shadow:0 3px 14px #2b473008}.stat-symbol{font-size:17px}.stat .value{font-variant-numeric:tabular-nums}.hearts{font-size:15px;letter-spacing:2px;color:var(--rose)}.hearts .empty{color:#d8d8d1}
+main{position:relative;z-index:1;max-width:1180px;margin:auto;padding:38px 27px 65px}.stage{border:1px solid var(--line);border-radius:27px;background:var(--card);box-shadow:var(--shadow);overflow:hidden}.landing{display:grid;grid-template-columns:minmax(270px,.88fr) minmax(0,1.12fr);min-height:540px}.art{position:relative;overflow:hidden;background:linear-gradient(155deg,#edf0e7 0%,#e0e7e0 55%,#f2eee0 100%);padding:34px;display:flex;align-items:center;justify-content:center}.art:before{content:"";position:absolute;width:380px;height:380px;border-radius:50%;background:#f8f7ed99;top:72px;left:-75px}.art:after{content:"";position:absolute;bottom:-70px;left:-50px;width:550px;height:230px;background:#b2c4b2;border-radius:50% 50% 0 0;transform:rotate(-9deg);opacity:.35}.art-note{position:absolute;top:40px;left:37px;font-size:18px;letter-spacing:.12em;line-height:1.9;font-weight:600;color:#526658;z-index:2}.art .mascot{width:min(86%,340px);height:auto;position:relative;z-index:3;filter:drop-shadow(0 18px 12px #49615220);margin-top:100px}.art-caption{position:absolute;bottom:27px;left:37px;color:#526658;z-index:5;font-size:11px;letter-spacing:.22em}.content{padding:48px 49px 43px;display:flex;flex-direction:column;justify-content:center}.eyebrow{font-size:11px;letter-spacing:.28em;font-weight:800;color:#768b7a;display:flex;gap:14px;align-items:center}.eyebrow:after{content:"";width:45px;height:1px;background:#99ad9e}.headline{font-size:clamp(29px,3.6vw,45px);line-height:1.25;margin:18px 0;font-weight:800;letter-spacing:.035em}.lead{line-height:1.95;color:#64726a;font-size:15px;margin:0 0 19px}.tags{display:flex;gap:8px;flex-wrap:wrap}.tag{background:#edf1eb;border:1px solid #e7ebe4;border-radius:100px;padding:8px 13px;font-size:13px;font-weight:650;color:#42594b}.rules{margin:27px 0 24px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}.rules-top{padding:15px 18px;font-weight:800;font-size:15px;border-bottom:1px solid var(--line)}.rules-list{display:grid;grid-template-columns:repeat(3,1fr)}.rule{padding:16px 13px;text-align:center}.rule+.rule{border-left:1px solid var(--line)}.rule-icon{font-size:23px;margin-bottom:7px}.rule strong{display:block;font-size:13px;margin-bottom:7px}.rule p{font-size:11px;color:#8a918b;line-height:1.65;margin:0}.primary{border:0;border-radius:15px;background:var(--green);color:white;font-weight:800;padding:17px 28px;font-size:16px;letter-spacing:.08em;transition:background .2s,transform .2s;box-shadow:0 8px 22px #38584a2a}.primary:hover{background:#294335;transform:translateY(-2px)}.primary:active{transform:translateY(0)}.text-cta{display:flex;gap:16px;align-items:center;justify-content:center}.micro{font-size:12px;letter-spacing:.09em;color:#87918a;text-align:center;margin:17px 0 0}
+.quiz-screen{max-width:825px;margin:auto;padding:33px 40px 38px;min-height:500px}.quiz-top{display:flex;justify-content:space-between;align-items:center;gap:13px}.chapter-label{font-size:12px;color:#849186;letter-spacing:.17em;font-weight:750}.question-number{font-size:18px;font-weight:800;margin-top:7px}.timer{font-size:14px;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:#faf8f3;border-radius:100px;padding:9px 14px;font-weight:750;min-width:94px;text-align:center}.timer.urgent{color:#b44d4b;border-color:#e8cac9;background:#fff0ef}.progress{margin:19px 0 39px;background:#ebece5;height:6px;border-radius:20px;overflow:hidden}.progress>div{height:100%;width:0;background:#789783;border-radius:20px;transition:width .3s}.question{font-size:clamp(20px,2.8vw,26px);line-height:1.9;font-weight:700;min-height:105px;white-space:pre-line;letter-spacing:.02em;margin-bottom:27px}.options{display:grid;grid-template-columns:1fr 1fr;gap:14px}.option{display:flex;align-items:center;gap:15px;text-align:left;background:#fff;border:1px solid #e1e3dc;border-radius:15px;padding:17px;min-height:82px;color:var(--ink);transition:.17s;line-height:1.55;font-size:15px;font-weight:600}.option:hover:not(:disabled){border-color:#90aa95;background:#f4f8f3;transform:translateY(-2px)}.option:disabled{cursor:default}.option-letter{flex-shrink:0;display:grid;place-items:center;width:35px;height:35px;border-radius:100px;background:#e9eeec;color:#3f6555;font-size:14px;font-weight:800}.option.correct{border:2px solid #6c9a7c;background:#eef6ef}.option.wrong{border:2px solid #c99690;background:#fff0ee;color:#b06460}.option.wrong .option-letter{background:#efcfcb}.quiet-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:33px;color:#8b958d;font-size:12px}.tip-banner{padding:13px 15px;background:#f1f4ed;border-radius:12px;color:#4e6a56;font-size:13px;margin-top:25px;line-height:1.6}.result{padding:49px 35px 45px;text-align:center;max-width:740px;margin:auto}.result-mark{width:93px;margin:auto}.result h2{font-size:30px;margin:14px 0 12px}.result-lead{color:#78867a;line-height:1.8;margin:0 0 25px}.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}.result-cell{background:#f5f7f1;border:1px solid var(--line);border-radius:15px;padding:20px 8px}.result-cell small{color:#879388;display:block;margin-bottom:7px}.result-cell b{font-size:23px}.review{margin:18px 0 26px;text-align:left}.review summary{cursor:pointer;font-weight:700;padding:12px;border-bottom:1px solid var(--line)}.review-list{max-height:250px;overflow:auto;padding:0 12px}.review-item{padding:12px 4px;border-bottom:1px solid var(--line);font-size:13px;line-height:1.7}.review-item strong{color:#557763}.review-item p{margin:5px 0;color:#7a867b}footer{position:relative;text-align:center;padding:22px;color:#9da39a;font-size:11px;letter-spacing:.18em;border-top:1px solid var(--line)}.modal-backdrop{position:fixed;z-index:20;inset:0;background:#1e3028a8;display:grid;place-items:center;padding:20px}.modal{max-width:455px;width:100%;background:#fffefa;border:1px solid var(--line);border-radius:22px;padding:29px;box-shadow:0 30px 90px #192d2545}.modal-kicker{font-size:11px;font-weight:800;letter-spacing:.25em;color:#bf766c}.modal h3{font-size:24px;margin:12px 0}.modal p{line-height:1.8;color:#68786e}.answer-note{background:#f3f5ef;padding:16px 18px;border-radius:13px;margin:18px 0 24px;font-size:14px;line-height:1.8}.answer-note b{color:#405a49}.full{width:100%}#pause-btn{border:0;background:transparent;color:#748277;text-decoration:underline;text-underline-offset:4px;padding:7px 0;font-size:12px}#pause-btn:hover{color:#334c3c}
+@media(max-width:850px){main{padding:20px 14px 46px}.landing{grid-template-columns:1fr}.art{min-height:280px;padding:20px}.art-note{font-size:15px;top:20px;left:23px}.art .mascot{width:205px;margin:25px 0 -42px 75px}.art-caption{display:none}.content{padding:27px 25px 31px}.headline{margin:12px 0}.rules{margin:21px 0}.quiz-screen{padding:26px 22px 30px}}@media(max-width:570px){.topbar{padding:12px 14px}.mark{width:42px;height:42px}.brand-title{font-size:14px}.brand-sub{font-size:9px;letter-spacing:.08em}.statrow{gap:6px}.stat{padding:8px;min-width:51px;font-size:12px;gap:4px}.stat-symbol{font-size:14px}.rules-list{grid-template-columns:1fr}.rule{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 15px}.rule+.rule{border-top:1px solid var(--line);border-left:0}.rule-icon{margin:0}.rule strong{margin-bottom:3px}.rule p{font-size:11px}.options{grid-template-columns:1fr;gap:10px}.option{min-height:67px;padding:13px}.question{font-size:21px;min-height:95px}.progress{margin-bottom:26px}.result-stats{gap:6px}.result-cell{padding:13px 5px}.result-cell b{font-size:19px}.result{padding:35px 20px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head><body>
+<!-- Reusable vector artwork is embedded so the game works offline. -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs><symbol id="raccoon" viewBox="0 0 240 260"><ellipse cx="124" cy="239" rx="98" ry="10" fill="#789080" opacity=".17"/><path d="M170 182c30-33 60-13 41 10-10 13-31 15-45 15" fill="none" stroke="#6e6257" stroke-width="25" stroke-linecap="round"/><path d="M185 179q10 8 14 20M166 199l16 5" fill="none" stroke="#d9d5c8" stroke-width="9"/><path d="M91 136c-24 24-36 64-22 94 13 15 91 15 107 2 10-36-9-77-33-96" fill="#898d83" stroke="#4b514b" stroke-width="4"/><ellipse cx="120" cy="202" rx="38" ry="32" fill="#eee9d9"/><path d="M84 218v19M158 218v19" stroke="#4a4b44" stroke-width="19" stroke-linecap="round"/><path d="M68 155q-31 18-19 44" fill="none" stroke="#5d6259" stroke-width="19" stroke-linecap="round"/><path d="M171 157q27 13 13 44" fill="none" stroke="#5d6259" stroke-width="19" stroke-linecap="round"/><path d="M48 72L53 20q3-13 15-6l37 35M192 72l-5-52q-3-13-15-6l-37 35" fill="#666d64" stroke="#404940" stroke-width="4" stroke-linejoin="round"/><path d="M61 37l3 31 23-20M178 37l-3 31-23-20" fill="#d8bba9"/><ellipse cx="120" cy="102" rx="87" ry="77" fill="#aaa99b" stroke="#535d53" stroke-width="4"/><path d="M42 98c24-26 41-31 75-17-6 27-20 45-42 48-16-3-27-13-33-31ZM198 98c-24-26-41-31-75-17 6 27 20 45 42 48 16-3 27-13 33-31Z" fill="#475149"/><ellipse cx="120" cy="136" rx="40" ry="30" fill="#f3edde"/><circle cx="83" cy="102" r="8" fill="#222b27"/><circle cx="157" cy="102" r="8" fill="#222b27"/><circle cx="86" cy="99" r="2.5" fill="#fff"/><circle cx="160" cy="99" r="2.5" fill="#fff"/><path d="M107 127q13-9 26 0l-13 12Z" fill="#343d36"/><path d="M120 140q-7 12-17 3m17-3q7 12 17 3" stroke="#54584e" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M76 141q-10-3-17 3m99-3q10-3 17 3" fill="none" stroke="#777a6d" stroke-width="2.5" stroke-linecap="round"/><path d="M64 173c17-11 29-9 56 0 27-9 39-11 56 0v50c-26-9-37-8-56 0-19-8-30-9-56 0z" fill="#f6efda" stroke="#a39a82" stroke-width="3"/><path d="M120 173v50M70 189l37-7M132 187l35 13M79 202l28-8" stroke="#bcb29d" stroke-width="2" opacity=".7"/><path d="M60 178l-15 17m135-17 15 17" stroke="#4e554d" stroke-width="13" stroke-linecap="round"/></symbol></defs></svg>
+<header><div class="topbar"><div class="brand"><svg class="mark" viewBox="0 0 240 260" role="img" aria-label="小浣熊 Logo"><use href="#raccoon"/></svg><div><div class="brand-title">浣熊語法研究室</div><div class="brand-sub">B3L5 · TOCFL GRAMMAR QUEST</div></div></div><div class="statrow"><div class="stat" title="剩餘生命值"><span class="stat-symbol">♥</span><span id="hp-display" class="value">3</span></div><div class="stat" title="累積積分"><span class="stat-symbol">★</span><span id="score-display" class="value">0</span></div></div></div></header>
+<main><section id="start-view" class="stage landing"><div class="art"><div class="art-note">語法是地圖，<br>帶你看見更大的世界。</div><svg class="mascot" viewBox="0 0 240 260" role="img" aria-label="拿著地圖的小浣熊"><use href="#raccoon"/></svg><div class="art-caption">A LITTLE GRAMMAR, A BIGGER WORLD.</div></div><div class="content"><div class="eyebrow">GRAMMAR MISSION · B3L5</div><h1 class="headline">準備好挑戰了嗎？</h1><p class="lead">跟著小浣熊一起闖關！透過 20 道隨機排列的語法題目，練習掌握這四個重點句型。</p><div class="tags"><span class="tag">一連</span><span class="tag">以為……沒想到</span><span class="tag">還是……吧</span><span class="tag">萬一</span></div><div class="rules"><div class="rules-top">遊戲規則 <span style="float:right;color:#9da89d;font-size:11px;font-weight:500">答對越多，離目標越近！</span></div><div class="rules-list"><div class="rule"><div class="rule-icon">♥</div><div><strong>3 顆愛心</strong><p>答錯或逾時會失去 1 顆</p></div></div><div class="rule"><div class="rule-icon">◷</div><div><strong>每題 25 秒</strong><p>時間內選出正確答案</p></div></div><div class="rule"><div class="rule-icon">★</div><div><strong>連勝加分</strong><p>連續答對，積分越高</p></div></div></div></div><button class="primary text-cta" id="start-btn">開始挑戰關卡 <span aria-hidden="true">→</span></button><p class="micro">學好一點語法，走得更遠一點。</p></div></section>
+<section id="quiz-view" class="stage hidden"><div class="quiz-screen"><div class="quiz-top"><div><div class="chapter-label">GRAMMAR CHECKPOINT</div><div class="question-number" id="question-number">第 1 題 ／ 共 20 題</div></div><div id="timer" class="timer" aria-live="off">◷ <span id="timer-text">25</span> 秒</div></div><div class="progress"><div id="progress-bar"></div></div><div class="question" id="question-text"></div><div class="options" id="options-grid"></div><div id="combo-notice" class="tip-banner hidden"></div><div class="quiet-bar"><span id="step-hint">仔細閱讀，選出最適合的答案。</span><button id="pause-btn" type="button">返回首頁</button></div></div></section>
+<section id="result-view" class="stage hidden"><div class="result"><svg class="result-mark" viewBox="0 0 240 260" aria-hidden="true"><use href="#raccoon"/></svg><div class="eyebrow" style="justify-content:center">MISSION REPORT</div><h2 id="result-title">完成挑戰！</h2><p class="result-lead" id="result-lead"></p><div class="result-stats"><div class="result-cell"><small>累積積分</small><b id="final-score">0</b></div><div class="result-cell"><small>最高連勝</small><b id="final-combo">0</b></div><div class="result-cell"><small>首次答對率</small><b id="final-accuracy">0%</b></div></div><details class="review"><summary>查看本次語法複習紀錄</summary><div id="review-list" class="review-list"></div></details><button class="primary full" id="again-btn">再挑戰一次 →</button><p class="micro">可以重複練習，每次題目順序都不同。</p></div></section></main>
+<div class="modal-backdrop hidden" id="error-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal"><div class="modal-kicker">GRAMMAR NOTE · 語法急救包</div><h3 id="modal-title">再想想看！</h3><p id="modal-message">失去一顆愛心</p><div class="answer-note"><b>小浣熊的語法提醒</b><div id="modal-rule"></div></div><button class="primary full" id="modal-next">我知道了，繼續挑戰 →</button></div></div>
+<footer>© CHEN YU · RACCOON GRAMMAR LAB</footer>
+<script>
+const questionBank = [
+      {
+        id: 1,
+        question: "最近天氣很不好，已經（　　）下了五天的雨，衣服都曬不乾。",
+        options: ["一直", "一連", "一起", "一共"],
+        answer: 1,
+        rule: "「一連」強調同一動作或事件連續發生，常與「幾天／幾次／幾年」等具體數量詞搭配。"
+      },
+      {
+        id: 2,
+        question: "小美最近工作很忙，（　　）三個星期都沒有休假，難怪她這麼累。",
+        options: ["一連", "一向", "一時", "一定"],
+        answer: 0,
+        rule: "「一連三個星期」用來形容時間連續不中斷。"
+      },
+      {
+        id: 3,
+        question: "這家餐廳的生意非常好，我們（　　）去了三次，都沒有位子。",
+        options: ["一樣", "一邊", "一連", "一旦"],
+        answer: 2,
+        rule: "「一連去了三次」表示連續重複此動作三次。"
+      },
+      {
+        id: 4,
+        question: "這位選手非常厲害，（　　）贏了四場比賽，最後拿到了冠軍。",
+        options: ["一共", "一連", "一切", "一度"],
+        answer: 1,
+        rule: "「一連贏了四場」強調連續獲得四次勝利。"
+      },
+      {
+        id: 5,
+        question: "為了準備期末考，安娜（　　）好幾天都讀書到半夜，現在終於考完了。",
+        options: ["一連", "一樣", "一同", "一點"],
+        answer: 0,
+        rule: "「一連好幾天」形容連續數天。"
+      },
+      {
+        id: 6,
+        question: "我（　　）今天會下雨，（　　）天氣這麼好，早知道就去爬山了。",
+        options: ["發現……所以……", "以為……沒想到……", "覺得……因為……", "希望……但是……"],
+        answer: 1,
+        rule: "「以為……沒想到……」表示原先的設想和現實實際狀況完全相反。"
+      },
+      {
+        id: 7,
+        question: "A：你不是說那部電影很無聊嗎？\nB：對啊！我（　　）不好看，（　　）看完以後非常感動。",
+        options: ["本來……所以……", "雖然……但是……", "以為……沒想到……", "因為……結果……"],
+        answer: 2,
+        rule: "本來以為不好看，實際卻感動，前後有落差時使用「以為……沒想到……」。"
+      },
+      {
+        id: 8,
+        question: "美玲第一次來台灣，她（　　）冬天不會冷，（　　）寒流來的時候只有八度。",
+        options: ["以為……沒想到……", "知道……所以……", "發現……於是……", "希望……結果……"],
+        answer: 0,
+        rule: "事前猜想「不會冷」，事實卻「寒流只有八度」，用「以為……沒想到……」。"
+      },
+      {
+        id: 9,
+        question: "A：你怎麼這麼早回來？\nB：我（　　）今天的會議要開三個小時，（　　）半個小時就結束了。",
+        options: ["認為……因此……", "以為……沒想到……", "知道……但是……", "雖然……可是……"],
+        answer: 1,
+        rule: "預期開三小時，沒想到半小時就結束，前後產生強烈對比。"
+      },
+      {
+        id: 10,
+        question: "我（　　）這次考試很簡單，（　　）題目比上次難多了。",
+        options: ["因為……所以……", "如果……就……", "以為……沒想到……", "雖然……還是……"],
+        answer: 2,
+        rule: "原先以為很簡單，真實情形卻是更難。"
+      },
+      {
+        id: 11,
+        question: "A：現在雨下得這麼大，我們還要出去買東西嗎？\nB：外面太危險了，（　　）明天再去（　　）。",
+        options: ["應該……了", "還是……吧", "只好……呢", "一定……嗎"],
+        answer: 1,
+        rule: "「還是……吧」表示在諸多考量後提出一個委婉的折衷建議。"
+      },
+      {
+        id: 12,
+        question: "A：這兩件衣服，你覺得哪一件比較好看？\nB：黑色的比較適合你，你（　　）買黑色的（　　）。",
+        options: ["已經……了", "一定……嗎", "還是……吧", "可能……呢"],
+        answer: 2,
+        rule: "給予對方購買建議時，使用「還是……吧」語氣親切自然。"
+      },
+      {
+        id: 13,
+        question: "我們已經等了半個小時，公車還是沒來。再等下去可能會遲到，（　　）坐計程車（　　）。",
+        options: ["只要……就", "雖然……但是", "一定……了", "還是……吧"],
+        answer: 3,
+        rule: "衡量當前情境（怕遲到）後改變最初的選擇，用「還是……吧」。"
+      },
+      {
+        id: 14,
+        question: "A：你感冒還沒好，今天真的要去游泳嗎？\nB：你說得對，我（　　）在家休息（　　）。",
+        options: ["還是……吧", "只要……就", "可能……了", "已經……呢"],
+        answer: 0,
+        rule: "接受建言並改變原先計畫時使用。"
+      },
+      {
+        id: 15,
+        question: "A：這家餐廳要排隊一個小時，你還想吃嗎？\nB：我們下午還有課，（　　）換一家餐廳（　　）。",
+        options: ["一定……嗎", "還是……吧", "正在……呢", "已經……了"],
+        answer: 1,
+        rule: "考慮到下午要上課，提議換餐廳，使用「還是……吧」。"
+      },
+      {
+        id: 16,
+        question: "明天要去山上旅行，（　　）突然下大雨，我們就改去博物館。",
+        options: ["即使", "雖然", "萬一", "只要"],
+        answer: 2,
+        rule: "「萬一」用於假設不希望發生但仍有可能出現的突發事故，常後接應變計畫。"
+      },
+      {
+        id: 17,
+        question: "出國旅行前，最好把護照影印一份，（　　）護照不見了，才比較容易處理。",
+        options: ["萬一", "因為", "不但", "無論"],
+        answer: 0,
+        rule: "針對「護照遺失」的不幸假設情況，使用「萬一」。"
+      },
+      {
+        id: 18,
+        question: "A：你怎麼帶了兩把傘？\nB：（　　）其中一把壞了，至少還有另一把可以用。",
+        options: ["既然", "萬一", "除非", "雖然"],
+        answer: 1,
+        rule: "防患未然的預防性假設語法，選「萬一」。"
+      },
+      {
+        id: 19,
+        question: "騎機車一定要戴安全帽，（　　）發生意外，才能減少受傷的機會。",
+        options: ["只要", "即使", "萬一", "因為"],
+        answer: 2,
+        rule: "「萬一」強調極小機率的不幸意外事件。"
+      },
+      {
+        id: 20,
+        question: "A：我們只剩十分鐘就要出發了，小林還沒來，怎麼辦？\nB：（　　）他趕不上車，我們就請他自己坐捷運過去。",
+        options: ["萬一", "既然", "無論", "雖然"],
+        answer: 0,
+        rule: "預防同伴趕不上車的備案討論，填「萬一」。"
+      }
+    ];
+const $ = s => document.getElementById(s);
+const state = {quiz:[],index:0,hp:3,score:0,combo:0,maxCombo:0,firstCorrect:0,time:25,timer:null,locked:false,mistake:false,wrongChoices:new Set(),review:[],round:0,wrongMode:''};
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function show(view){for(const id of ['start-view','quiz-view','result-view']) $(id).classList.toggle('hidden',id!==view);window.scrollTo({top:0,behavior:'instant'});}
+function stats(){$('hp-display').textContent=state.hp;$('score-display').textContent=state.score;}
+function stopTimer(){if(state.timer!==null){clearInterval(state.timer);state.timer=null;}}
+function start(){stopTimer();state.round++;state.quiz=shuffle(questionBank);Object.assign(state,{index:0,hp:3,score:0,combo:0,maxCombo:0,firstCorrect:0,mistake:false,locked:false,review:[]});stats();show('quiz-view');load();}
+function load(){stopTimer();state.locked=false;state.mistake=false;state.wrongChoices=new Set();state.wrongMode='';const q=state.quiz[state.index];$('question-number').textContent=`第 ${state.index+1} 題 ／ 共 ${state.quiz.length} 題`;$('progress-bar').style.width=`${(state.index/state.quiz.length)*100}%`;$('question-text').textContent=q.question;$('options-grid').replaceChildren();$('combo-notice').classList.add('hidden');$('step-hint').textContent='仔細閱讀，選出最適合的答案。';q.options.forEach((option,i)=>{const btn=document.createElement('button');btn.type='button';btn.className='option';const label=document.createElement('span');label.className='option-letter';label.textContent='ABCD'[i];const name=document.createElement('span');name.textContent=option;btn.append(label,name);btn.addEventListener('click',()=>answer(i,btn));$('options-grid').append(btn);});timerStart(25);}
+function timerStart(seconds){stopTimer();state.time=seconds;updateTime();const round=state.round,index=state.index;let finish=Date.now()+seconds*1000;state.timer=setInterval(()=>{if(round!==state.round||index!==state.index){stopTimer();return;}state.time=Math.max(0,Math.ceil((finish-Date.now())/1000));updateTime();if(state.time===0){stopTimer();timeout();}},180);}
+function updateTime(){$('timer-text').textContent=state.time;$('timer').classList.toggle('urgent',state.time<=5);}
+function answer(i,btn){if(state.locked||state.wrongChoices.has(i))return;const q=state.quiz[state.index];if(i===q.answer){state.locked=true;stopTimer();btn.classList.add('correct');for(const b of $('options-grid').children)b.disabled=true;if(!state.mistake){state.combo++;state.firstCorrect++;state.maxCombo=Math.max(state.maxCombo,state.combo);state.score+=10+state.combo*2;}else{state.combo=0;state.score+=5;}state.review.push({question:q.question,correct:q.options[q.answer],rule:q.rule,first:!state.mistake});stats();$('step-hint').textContent='答對了！小浣熊為你加油 ✦';if(state.combo>=2){$('combo-notice').classList.remove('hidden');$('combo-notice').textContent=`✦ 連續答對 ${state.combo} 題，連勝獎勵已加入積分！`;}setTimeout(()=>{if(state.locked)next();},800);}else{state.mistake=true;state.combo=0;state.hp=Math.max(0,state.hp-1);state.wrongChoices.add(i);btn.classList.add('wrong');btn.disabled=true;stats();stopTimer();state.locked=true;state.wrongMode='incorrect';openModal('再想想看！',state.hp>0?`答錯了，剩下 ${state.hp} 顆愛心。看看語法提示，再選一次！`:'愛心用完了，這次挑戰先到這裡。',q.rule);}}
+function timeout(){if(state.locked)return;state.mistake=true;state.combo=0;state.hp=Math.max(0,state.hp-1);state.locked=true;state.wrongMode='timeout';stats();const q=state.quiz[state.index];openModal('時間到了！',state.hp>0?`本題逾時，剩下 ${state.hp} 顆愛心。下一題繼續加油！`:'愛心用完了，這次挑戰先到這裡。',q.rule);}
+function openModal(title,message,rule){$('modal-title').textContent=title;$('modal-message').textContent=message;$('modal-rule').textContent=rule;$('modal-next').textContent=state.hp===0?'查看本次成績 →':state.wrongMode==='timeout'?'前往下一題 →':'知道了，再試一次 →';$('error-modal').classList.remove('hidden');$('modal-next').focus();}
+function closeModal(){$('error-modal').classList.add('hidden');if(state.hp<=0){state.review.push({question:state.quiz[state.index].question,correct:state.quiz[state.index].options[state.quiz[state.index].answer],rule:state.quiz[state.index].rule,first:false});end(false);return;}if(state.wrongMode==='timeout'){const q=state.quiz[state.index];state.review.push({question:q.question,correct:q.options[q.answer],rule:q.rule,first:false});next();}else{state.locked=false;$('step-hint').textContent='再試一次，剛才選錯的選項已標記。';timerStart(25);}}
+function next(){stopTimer();state.index++;if(state.index>=state.quiz.length){end(true);}else{load();}}
+function end(won){stopTimer();state.locked=true;$('progress-bar').style.width='100%';show('result-view');$('result-title').textContent=won?'成功完成語法挑戰！':'今天的語法探險告一段落';$('result-lead').textContent=won?'太棒了！小浣熊陪你完成了全部 20 道語法題。':'練習的每一步都有收穫。看看解析，下次再挑戰！';$('final-score').textContent=state.score;$('final-combo').textContent=state.maxCombo+' 題';$('final-accuracy').textContent=Math.round((state.firstCorrect/state.quiz.length)*100)+'%';const list=$('review-list');list.replaceChildren();state.review.forEach((r,i)=>{const item=document.createElement('div');item.className='review-item';const title=document.createElement('div');title.textContent=`${i+1}. ${r.question}`;const correct=document.createElement('strong');correct.textContent=`正確答案：${r.correct} ${r.first?'✓ 首次答對':'· 本題需加強'}`;const expl=document.createElement('p');expl.textContent=r.rule;item.append(title,correct,expl);list.append(item);});}
+$('start-btn').addEventListener('click',start);$('again-btn').addEventListener('click',start);$('modal-next').addEventListener('click',closeModal);$('pause-btn').addEventListener('click',()=>{if(window.confirm('要返回首頁嗎？本次闖關進度將不會保留。')){state.round++;stopTimer();state.hp=3;state.score=0;stats();show('start-view');}});window.addEventListener('keydown',e=>{if($('quiz-view').classList.contains('hidden')||!$('error-modal').classList.contains('hidden'))return;if(['1','2','3','4'].includes(e.key)){const btn=$('options-grid').children[Number(e.key)-1];if(btn&&!btn.disabled)btn.click();}});
+stats();
+</script></body></html>
